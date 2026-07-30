@@ -107,7 +107,7 @@
       <span>Docker Desktop / Linux 6.10.14</span>
       <span>дисковый Docker volume</span>
       <span>эмулятор Envoy на C++17</span>
-      <span>файлы 50 и 100 MiB</span>
+      <span>файлы 50, 100 и 200 MiB</span>
       <span>3 запуска на значение</span>
     </div>
   </header>
@@ -143,6 +143,9 @@
     <div class="bar-row"><div class="bar-label">Copytruncate, 100 MiB × 1</div><div class="bar-track"><div class="bar copy" style="width:90%"></div></div><div class="bar-value">72 MiB</div></div>
     <div class="bar-row"><div class="bar-label">Без ротации, 100 MiB</div><div class="bar-track"><div class="bar base" style="width:70%"></div></div><div class="bar-value">56 MiB</div></div>
     <div class="bar-row"><div class="bar-label">Rename + reopen, 100 MiB × 1</div><div class="bar-track"><div class="bar rename" style="width:70%"></div></div><div class="bar-value">56 MiB</div></div>
+    <div class="bar-row"><div class="bar-label">Copytruncate, 200 MiB × 1</div><div class="bar-track"><div class="bar copy" style="width:90%"></div></div><div class="bar-value">72 MiB</div></div>
+    <div class="bar-row"><div class="bar-label">Без ротации, 200 MiB</div><div class="bar-track"><div class="bar base" style="width:70%"></div></div><div class="bar-value">56 MiB</div></div>
+    <div class="bar-row"><div class="bar-label">Rename + reopen, 200 MiB × 1</div><div class="bar-track"><div class="bar rename" style="width:70%"></div></div><div class="bar-value">56 MiB</div></div>
     <div class="bar-row"><div class="bar-label">Copytruncate, 50 MiB × 5</div><div class="bar-track"><div class="bar copy" style="width:85%"></div></div><div class="bar-value">68 MiB</div></div>
     <div class="bar-row"><div class="bar-label">Rename + reopen, 50 MiB × 5</div><div class="bar-track"><div class="bar rename" style="width:70%"></div></div><div class="bar-value">56 MiB</div></div>
   </div>
@@ -154,12 +157,15 @@
       <tr><td>Copytruncate, 100 MiB, одна ротация</td><td>68 MiB: 3 OOM из 3</td><td><b>72 MiB</b></td></tr>
       <tr><td>Без ротации, запись 100 MiB</td><td>52 MiB: завершились 2 из 3</td><td><b>56 MiB</b></td></tr>
       <tr><td>Rename + reopen, 100 MiB, одна ротация</td><td>52 MiB: завершились 2 из 3</td><td><b>56 MiB</b></td></tr>
+      <tr><td>Copytruncate, 200 MiB, одна ротация</td><td>68 MiB: завершились 2 из 3</td><td><b>72 MiB</b></td></tr>
+      <tr><td>Без ротации, запись 200 MiB</td><td>52 MiB: завершился 1 из 3</td><td><b>56 MiB</b></td></tr>
+      <tr><td>Rename + reopen, 200 MiB, одна ротация</td><td>52 MiB: завершились 5 из 6 в двух сериях</td><td><b>56 MiB</b></td></tr>
       <tr><td>Copytruncate, 50 MiB, пять ротаций</td><td>64 MiB: 3 OOM из 3</td><td><b>68 MiB</b></td></tr>
       <tr><td>Rename + reopen, 50 MiB, пять ротаций</td><td>52 MiB: завершился 1 из 3</td><td><b>56 MiB</b></td></tr>
     </tbody>
   </table>
 
-  <p class="note"><b>Влияние размера файла не установлено.</b> Для 50 MiB получено 68 MiB, для 100 MiB — 72 MiB. Разница равна одному шагу теста, а граница OOM заметно менялась между сериями запусков. Эти данные не доказывают рост потребления памяти при увеличении файла. Они показывают только отсутствие пропорционального роста на полный размер файла в данной серии.</p>
+  <p class="note"><b>Рост лимита с размером файла не обнаружен.</b> Для copytruncate получено 68 MiB при файле 50 MiB и 72 MiB при файлах 100 и 200 MiB. Для rename + reopen файлы 100 и 200 MiB прошли при 56 MiB. Разница 68/72 MiB равна одному шагу теста, а один разведочный запуск copytruncate 200 MiB получил OOM при 72 MiB. Поэтому эти значения показывают порядок требуемой памяти, но не точную границу.</p>
 
   <h2>Файловый кеш при лимите 768 MiB</h2>
   <p>Пять ротаций файлов по 50 MiB выполнялись при лимите 768 MiB. Ядру не требовалось освобождать кеш из-за нехватки памяти.</p>
@@ -186,6 +192,9 @@
       <tr><td>Copytruncate, 100 MiB × 1</td><td>72 MiB</td><td>49,2–52,9 MiB</td><td>17,7–21,6 MiB</td></tr>
       <tr><td>Без ротации, 100 MiB</td><td>56 MiB</td><td>47,6–49,4 MiB</td><td>6,8–8,7 MiB</td></tr>
       <tr><td>Rename + reopen, 100 MiB × 1</td><td>56 MiB</td><td>48,8–50,0 MiB</td><td>6,4–8,3 MiB</td></tr>
+      <tr><td>Copytruncate, 200 MiB × 1</td><td>72 MiB</td><td>49,3–51,4 MiB</td><td>19,6–21,7 MiB</td></tr>
+      <tr><td>Без ротации, 200 MiB</td><td>56 MiB</td><td>48,9–49,7 MiB</td><td>6,6–6,7 MiB</td></tr>
+      <tr><td>Rename + reopen, 200 MiB × 1</td><td>56 MiB</td><td>46,6–50,3 MiB</td><td>6,5–8,4 MiB</td></tr>
       <tr><td>Copytruncate, 50 MiB × 5</td><td>68 MiB</td><td>48,4–51,7 MiB</td><td>15,5–19,2 MiB</td></tr>
       <tr><td>Rename + reopen, 50 MiB × 5</td><td>56 MiB</td><td>49,0–52,3 MiB</td><td>6,3–8,7 MiB</td></tr>
     </tbody>
@@ -231,7 +240,7 @@
     <li>Copytruncate добавляет полный проход чтения и записи по лог-файлу. При достаточном лимите памяти это увеличило пик файлового кеша с 49,8 до 100,4 MiB для файла 50 MiB.</li>
     <li>При пяти ротациях copytruncate создавал временный пик на размер одного дополнительного файла, но не оставлял постоянную вторую копию каждой ротации в кеше.</li>
     <li>При ограниченной памяти copytruncate работал с лимитом 68 MiB, а rename + reopen — с лимитом 56 MiB. Разница составила 12 MiB. Пик 48 MiB появлялся только при большом свободном запасе памяти; при малом лимите Linux не оставлял весь этот объём в кеше.</li>
-    <li>Зависимость минимального лимита от размера файла не установлена: разница между 68 и 72 MiB равна шагу измерения.</li>
+    <li>Увеличение файла со 100 до 200 MiB не изменило проверенные лимиты: 72 MiB для copytruncate и 56 MiB для rename + reopen.</li>
     <li>Copytruncate терял записи при всех проверенных лимитах. Rename + reopen потерь не показал и по памяти совпал с обычной записью без ротации.</li>
   </ol>
 
@@ -244,6 +253,7 @@
     <summary>Методика и ограничения</summary>
     <ul>
       <li>Эмулятор Envoy — отдельный процесс на C++17; pilot-agent, сборщик метрик и управляющий процесс — на Go.</li>
+      <li>Проверены файлы 50, 100 и 200 MiB; для 50 MiB дополнительно проверена серия из пяти ротаций.</li>
       <li>Скорость записи — 8 MiB/s; запись — 512 байт; буфер — 64 KiB; сброс — не реже 100 ms.</li>
       <li>Дополнительная постоянно используемая память — 32 MiB.</li>
       <li>Для каждого запуска создавался новый дисковый Docker volume; tmpfs не использовался.</li>
@@ -264,6 +274,11 @@
       <li><a href="../results/size-candidates-20260730T214154/100m-copy-72.json">Copytruncate 100 MiB при 72 MiB</a></li>
       <li><a href="../results/size-candidates-20260730T214154/100m-copy-68.json">Copytruncate 100 MiB при 68 MiB</a></li>
       <li><a href="../results/repeated-pressure-candidates-20260730T214835/copy-68.json">Copytruncate 5 × 50 MiB при 68 MiB</a></li>
+      <li><a href="../results/size-200m-final-20260730T233657/baseline.json">Обычная запись 200 MiB</a></li>
+      <li><a href="../results/size-200m-exploratory-20260730T233420/result.json">Разведочный поиск copytruncate 200 MiB</a></li>
+      <li><a href="../results/size-200m-copy-boundary-20260730T234447/result.json">Copytruncate 200 MiB при 68/72 MiB</a></li>
+      <li><a href="../results/size-200m-final-20260730T233657/rename-reopen.json">Rename + reopen 200 MiB</a></li>
+      <li><a href="../results/size-200m-rename-boundary-20260730T234814/result.json">Повторная проверка rename + reopen при 52 MiB</a></li>
       <li><a href="copyprobe-strace.txt">Трассировка copy_file_range + fsync</a></li>
       <li><a href="../README.md">Описание стенда и формата результатов</a></li>
     </ul>

@@ -81,17 +81,18 @@ CSV and JSON results.
 
 `pressure-boundaries.sh` checks whether the one-rotation memory boundary still
 holds across five retained 50 MiB files, and repeats the same boundary check
-with a 100 MiB active file. Every boundary candidate requires three runs; use
-`--quick` only to validate the pipeline with one run.
+with 100 MiB and 200 MiB active files. Every boundary candidate requires three
+runs; use `--quick` only to validate the pipeline with one run.
 
 The measured comparison, charts, interpretation, and limitations are in the
 human-readable [HTML report](reports/logrotate-cache-report.html). In the
 current Docker Desktop environment, the adjacent pressure candidates were
 64/68 MiB (fail/pass) for one and five 50 MiB copytruncate rotations, 68/72 MiB
 for one 100 MiB copytruncate rotation, and 52/56 MiB for the 100 MiB baseline,
-100 MiB rename-reopen, and five 50 MiB rename-reopen rotations. The observed
-68/72 MiB difference is one 4 MiB test step and must not be interpreted as a
-proven 4 MiB file-size effect.
+100 MiB rename-reopen, and five 50 MiB rename-reopen rotations. The 200 MiB
+profile also resolved at 68/72 MiB for copytruncate and 52/56 MiB for baseline
+and rename-reopen. The observed 68/72 MiB difference is one 4 MiB test step and
+must not be interpreted as a proven 4 MiB file-size effect.
 
 Generated reports are written below `results/`. The scripts remove only the
 containers, named volumes, temporary manifests, and kind cluster that they

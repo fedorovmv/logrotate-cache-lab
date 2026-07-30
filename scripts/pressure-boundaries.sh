@@ -59,6 +59,9 @@ run_case 50m-1x-copy copytruncate 50 1 1 64 68 45s
 run_case 100m-1x-copy copytruncate 100 1 1 68 72 60s
 run_case 100m-1x-baseline baseline 100 1 1 52 56 60s
 run_case 100m-1x-rename rename-reopen 100 1 1 52 56 60s
+run_case 200m-1x-copy copytruncate 200 1 1 68 72 90s
+run_case 200m-1x-baseline baseline 200 1 1 52 56 90s
+run_case 200m-1x-rename rename-reopen 200 1 1 52 56 90s
 run_case 50m-5x-copy copytruncate 50 5 5 64 68 90s
 run_case 50m-5x-rename rename-reopen 50 5 5 52 56 90s
 
