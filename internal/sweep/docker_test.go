@@ -37,10 +37,10 @@ func TestAbsoluteResultRootNormalizesRelativeDockerBindSource(t *testing.T) {
 func TestDockerWorkloadReportContainsSizingInputs(t *testing.T) {
 	got := dockerWorkload(DockerConfig{
 		MaxFileBytes: 32 << 20, BytesPerSecond: 8 << 20, ResidentBytes: 48 << 20,
-		Rotations: 4, RecordBytes: 512, BufferBytes: 64 << 10,
+		Rotations: 4, MaxBackups: 5, RecordBytes: 512, BufferBytes: 64 << 10,
 		FlushInterval: 100 * time.Millisecond, MonitorInterval: 250 * time.Millisecond,
 	})
-	if got.MaxFileBytes != 32<<20 || got.ResidentBytes != 48<<20 || got.Rotations != 4 || got.MonitorIntervalNS != int64(250*time.Millisecond) {
+	if got.MaxFileBytes != 32<<20 || got.ResidentBytes != 48<<20 || got.Rotations != 4 || got.MaxBackups != 5 || got.MonitorIntervalNS != int64(250*time.Millisecond) {
 		t.Fatalf("workload=%+v", got)
 	}
 }

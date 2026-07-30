@@ -71,6 +71,7 @@
     th:first-child, td:first-child { text-align: left; }
     th { color: #475467; background: #eef3f9; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
     tr:last-child td { border-bottom: 0; }
+    table.wrap th, table.wrap td { white-space: normal; text-align: left; vertical-align: top; }
     .badge.good { color: #087047; background: #dcf7ea; }
     .badge.bad { color: #a52835; background: #ffe5e8; }
     .badge.info { color: #174ea6; background: #e5efff; }
@@ -100,86 +101,96 @@
       <span>C++ writer</span>
       <span>tmpfs исключён</span>
       <span>3 повтора на границе</span>
-      <span>файл 50 MiB</span>
+      <span>файлы 50 и 100 MiB</span>
     </div>
   </header>
 
   <div class="lead">
-    <b>Вывод:</b> при ротации файла 50 MiB минимальный лимит памяти <b>всего тестового контейнера</b> составил <b>52 MiB для rename + reopen</b> и <b>88 MiB для copytruncate</b>. Это значение Docker <code>--memory</code> / cgroup <code>memory.max</code>, а не размер лог-файла или file cache. Полнофайловое копирование потребовало дополнительно 36 MiB container memory headroom и примерно удвоило file cache.
+    <b>Вывод:</b> размер ротируемого файла влияет на минимальный лимит <b>нелинейно</b>. Для copytruncate устойчивая граница выросла с <b>68 MiB при файле 50 MiB</b> до <b>72 MiB при 100 MiB</b>, а не ещё на 50 MiB. Rename + reopen и baseline с файлом 100 MiB прошли при <b>56 MiB</b>. Пять copytruncate-ротаций по 50 MiB также прошли при <b>68 MiB</b>: повторное копирование не аккумулировало обязательный RAM minimum, потому что cgroup reclaim вытеснял старые clean file pages.
   </div>
 
   <div class="callout" style="margin:20px 0">
-    <b>Что именно означает «52 MiB» и «88 MiB»?</b> Для каждого кандидата контейнер запускался с жёстким memory limit. Значение считается прошедшим, только если <b>все три запуска</b> записали файл 50 MiB, завершили ротацию и не получили OOM. В лимит входит всё: 32 MiB эмулируемого resident working set, C++ writer, Go run/monitor/rotator, anonymous memory, file cache, dirty и writeback pages.
+    <b>Что означает «минимальный limit»?</b> Это наименьший проверенный Docker <code>--memory</code> / cgroup <code>memory.max</code>, при котором прошли <b>все три запуска</b>; соседний кандидат на 4 MiB ниже не прошёл. В limit входят 32 MiB эмулируемого resident working set, C++ writer, Go run/monitor/rotator, anonymous memory, file cache, dirty и writeback pages. Это граница стенда в данной Linux VM, а не требование настоящего Envoy и не размер кеша.
   </div>
 
   <section class="grid">
     <div class="card">
-      <h3>Container memory limit: copytruncate</h3>
-      <div class="metric bad">88 <small>MiB</small></div>
-      <p class="muted">84 MiB не прошло 3/3 повторов</p>
+      <h3>Copytruncate, файл 50 MiB</h3>
+      <div class="metric bad">68 <small>MiB</small></div>
+      <p class="muted">64 MiB: 2/3 для 1 ротации; 0/3 для 5</p>
     </div>
     <div class="card">
-      <h3>Container memory limit: rename + reopen</h3>
-      <div class="metric good">52 <small>MiB</small></div>
-      <p class="muted">Совпало с baseline</p>
+      <h3>Copytruncate, файл 100 MiB</h3>
+      <div class="metric bad">72 <small>MiB</small></div>
+      <p class="muted">68 MiB: OOM во всех 3 повторах</p>
     </div>
     <div class="card">
-      <h3>Разница стратегий</h3>
-      <div class="metric good">−36 <small>MiB</small></div>
-      <p class="muted">41% ниже относительно copytruncate</p>
+      <h3>Rename + reopen, 100 MiB</h3>
+      <div class="metric good">56 <small>MiB</small></div>
+      <p class="muted">На уровне baseline; 52 MiB нестабильно</p>
     </div>
   </section>
 
   <h2>Минимальный memory limit всего контейнера</h2>
   <div class="card figure">
-    <svg viewBox="0 0 900 270" role="img" aria-label="Минимальные прошедшие memory limits всего контейнера">
+    <svg viewBox="0 0 900 445" role="img" aria-label="Минимальные прошедшие memory limits для файлов 50 и 100 MiB">
       <defs>
         <linearGradient id="copy" x1="0" x2="1"><stop stop-color="#f6b85f"/><stop offset="1" stop-color="#f28c28"/></linearGradient>
         <linearGradient id="rename" x1="0" x2="1"><stop stop-color="#48c99a"/><stop offset="1" stop-color="#138a5b"/></linearGradient>
         <linearGradient id="base" x1="0" x2="1"><stop stop-color="#9ab8ff"/><stop offset="1" stop-color="#246bfd"/></linearGradient>
       </defs>
       <g font-family="Inter,system-ui,sans-serif" font-size="13" fill="#667085">
-        <text x="190" y="245">0</text><text x="330" y="245">25</text><text x="470" y="245">50</text><text x="610" y="245">75</text><text x="750" y="245">100 MiB</text>
-        <g stroke="#d9e1ec"><line x1="200" y1="25" x2="200" y2="225"/><line x1="340" y1="25" x2="340" y2="225"/><line x1="480" y1="25" x2="480" y2="225"/><line x1="620" y1="25" x2="620" y2="225"/><line x1="760" y1="25" x2="760" y2="225"/></g>
+        <text x="245" y="425">0</text><text x="382" y="425">20</text><text x="522" y="425">40</text><text x="662" y="425">60</text><text x="802" y="425">80 MiB</text>
+        <g stroke="#d9e1ec"><line x1="250" y1="20" x2="250" y2="405"/><line x1="390" y1="20" x2="390" y2="405"/><line x1="530" y1="20" x2="530" y2="405"/><line x1="670" y1="20" x2="670" y2="405"/><line x1="810" y1="20" x2="810" y2="405"/></g>
       </g>
       <g font-family="Inter,system-ui,sans-serif" font-weight="700" fill="#172033">
-        <text x="20" y="66">Baseline</text><rect x="200" y="40" width="291" height="38" rx="9" fill="url(#base)"/><text x="505" y="65">52 MiB</text>
-        <text x="20" y="137">copytruncate</text><rect x="200" y="111" width="493" height="38" rx="9" fill="url(#copy)"/><text x="707" y="136">88 MiB</text>
-        <text x="20" y="208">rename + reopen</text><rect x="200" y="182" width="291" height="38" rx="9" fill="url(#rename)"/><text x="505" y="207">52 MiB</text>
+        <text x="20" y="60">Copy, 50 MiB × 1</text><rect x="250" y="35" width="476" height="36" rx="9" fill="url(#copy)"/><text x="738" y="59">68</text>
+        <text x="20" y="123">Copy, 100 MiB × 1</text><rect x="250" y="98" width="504" height="36" rx="9" fill="url(#copy)"/><text x="766" y="122">72</text>
+        <text x="20" y="186">Baseline, 100 MiB</text><rect x="250" y="161" width="392" height="36" rx="9" fill="url(#base)"/><text x="654" y="185">56</text>
+        <text x="20" y="249">Rename, 100 MiB × 1</text><rect x="250" y="224" width="392" height="36" rx="9" fill="url(#rename)"/><text x="654" y="248">56</text>
+        <text x="20" y="312">Copy, 50 MiB × 5</text><rect x="250" y="287" width="476" height="36" rx="9" fill="url(#copy)"/><text x="738" y="311">68</text>
+        <text x="20" y="375">Rename, 50 MiB × 5</text><rect x="250" y="350" width="392" height="36" rx="9" fill="url(#rename)"/><text x="654" y="374">56</text>
       </g>
     </svg>
   </div>
-  <p class="muted">Метод: файл 50 MiB, бинарный поиск 32–192 MiB, шаг 4 MiB; кандидат принимается только при трёх успешных повторах. Swap ограничен тем же значением, что и memory limit.</p>
+  <p class="muted">Метод: соседние кандидаты с шагом 4 MiB, три повтора каждого limit; swap отключён через <code>--memory-swap == --memory</code>. Поэтому результат — интервал с точностью 4 MiB, а не точная граница до байта.</p>
 
   <table>
-    <thead><tr><th>Стратегия</th><th>Наибольший limit с fail</th><th>Минимальный limit с 3/3 pass</th><th>К baseline</th><th>Попыток</th><th>Целостность</th></tr></thead>
+    <thead><tr><th>Сценарий</th><th>Limit ниже</th><th>Limit с 3/3 pass</th><th>Вывод</th><th>Целостность</th></tr></thead>
     <tbody>
-      <tr><td>Baseline, без ротации</td><td>48 MiB</td><td><b>52 MiB</b></td><td>—</td><td>24</td><td><span class="badge good">clean</span></td></tr>
-      <tr><td>copytruncate</td><td>84 MiB</td><td><b>88 MiB</b></td><td class="bad">+36 MiB</td><td>24</td><td><span class="badge bad">loss observed</span></td></tr>
-      <tr><td>rename + reopen</td><td>48 MiB</td><td><b>52 MiB</b></td><td class="good">0 MiB</td><td>24</td><td><span class="badge good">clean</span></td></tr>
+      <tr><td>Copy, 50 MiB, 1 ротация</td><td>64 MiB: 2/3</td><td><b>68 MiB</b></td><td>reference размера</td><td><span class="badge bad">loss observed</span></td></tr>
+      <tr><td>Copy, 100 MiB, 1 ротация</td><td>68 MiB: 0/3, OOM</td><td><b>72 MiB</b></td><td class="bad">+4 MiB к файлу 50 MiB</td><td><span class="badge bad">loss observed</span></td></tr>
+      <tr><td>Baseline, 100 MiB</td><td>52 MiB: 2/3</td><td><b>56 MiB</b></td><td>без ротации</td><td><span class="badge good">clean</span></td></tr>
+      <tr><td>Rename, 100 MiB, 1 ротация</td><td>52 MiB: 2/3</td><td><b>56 MiB</b></td><td class="good">совпало с baseline</td><td><span class="badge good">clean</span></td></tr>
+      <tr><td>Copy, 50 MiB, 5 ротаций</td><td>64 MiB: 0/3, OOM</td><td><b>68 MiB</b></td><td class="good">нет роста к 1 ротации</td><td><span class="badge bad">loss observed</span></td></tr>
+      <tr><td>Rename, 50 MiB, 5 ротаций</td><td>52 MiB: 1/3</td><td><b>56 MiB</b></td><td>узкая граница нестабильна</td><td><span class="badge good">clean</span></td></tr>
     </tbody>
   </table>
 
-  <h3 style="margin-top:22px">Из чего складывался container limit на минимальной успешной границе</h3>
+  <h3 style="margin-top:22px">Что осталось resident под давлением памяти</h3>
   <table>
-    <thead><tr><th>Стратегия</th><th>Заданный container limit</th><th>Peak memory.current</th><th>Peak anon</th><th>Peak file cache</th><th>Результат</th></tr></thead>
+    <thead><tr><th>Сценарий</th><th>Container limit</th><th>Peak anon</th><th>Peak file cache</th><th>Результат</th></tr></thead>
     <tbody>
-      <tr><td>copytruncate</td><td>88 MiB</td><td>≈88 MiB</td><td>≈47.4 MiB</td><td>37.8–37.9 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
-      <tr><td>rename + reopen</td><td>52 MiB</td><td>≈52 MiB</td><td>44.5–47.1 MiB</td><td>4.4–6.9 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
+      <tr><td>Copy, 50 MiB × 1</td><td>68 MiB</td><td>48.1–50.4 MiB</td><td>15.8–17.9 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
+      <tr><td>Copy, 100 MiB × 1</td><td>72 MiB</td><td>49.2–52.9 MiB</td><td>17.7–21.6 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
+      <tr><td>Baseline, 100 MiB</td><td>56 MiB</td><td>47.6–49.4 MiB</td><td>6.8–8.7 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
+      <tr><td>Rename, 100 MiB × 1</td><td>56 MiB</td><td>48.8–50.0 MiB</td><td>6.4–8.3 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
+      <tr><td>Copy, 50 MiB × 5</td><td>68 MiB</td><td>48.4–51.7 MiB</td><td>15.5–19.2 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
+      <tr><td>Rename, 50 MiB × 5</td><td>56 MiB</td><td>49.0–52.3 MiB</td><td>6.3–8.7 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
     </tbody>
   </table>
-  <p class="muted">Лог-файл остаётся на disk-backed volume. При лимите 52 MiB ядро не обязано держать все 50 MiB файла в RAM: оно вытесняло большую часть file cache, оставляя место anonymous working set. Copytruncate одновременно создавал cache для исходного и backup inode, поэтому при 84 MiB контейнер ещё получал OOM, а устойчиво прошёл только при 88 MiB.</p>
+  <p class="muted">При высоком limit cache может достигать размера всех retained-файлов. Под жёстким limit ядро не обязано держать их в RAM: clean file pages reclaimable. Поэтому 5 × 50 MiB backup-файлов занимают 250 MiB на диске, но успешный copytruncate container limit остался 68 MiB.</p>
 
   <div class="callout" style="margin-top:16px">
-    <b>Масштабирование подтвердилось.</b> На коротком файле 4 MiB разница минимальных container limits была 8 MiB. На 50 MiB минимальный container limit для copytruncate оказался уже на <b>36 MiB</b> выше rename/reopen. Rename остался на уровне baseline, поскольку не создаёт вторую копию содержимого файла.
+    <b>Почему раньше в отчёте было 88 MiB?</b> Первый широкий sweep 32–192 MiB действительно дал 84 fail / 88 pass для copytruncate 50 MiB. Более поздние side-by-side pressure-прогоны дали 64 fail / 68 pass. Near-OOM граница зависит от scheduling reclaim/writeback и состояния Linux VM. Поэтому 88 MiB сохранено как результат старого прогона, но не используется как универсальный minimum; итоговая таблица опирается на одинаково настроенные соседние кандидаты и показывает число успешных повторов.
   </div>
 
   <h2>Целостность логов</h2>
   <section class="grid two">
     <div class="card">
       <h3>Copytruncate, 50 MiB</h3>
-      <div class="metric bad">384–2136 <small>потерь</small></div>
-      <p>Диапазон missing sequence ID в трёх успешных попытках на минимальном лимите 88 MiB.</p>
+      <div class="metric bad">156–905 <small>потерь</small></div>
+      <p>Диапазон missing sequence ID в трёх успешных попытках при limit 68 MiB.</p>
     </div>
     <div class="card">
       <h3>Rename + reopen</h3>
@@ -218,6 +229,27 @@
 
   <div class="callout" style="margin:16px 0 24px">
     <b>Ответ про аккумуляцию.</b> Cache retained backup-файлов накапливается у обеих стратегий примерно по 50 MiB за ротацию, пока ядро не испытывает memory pressure. Copytruncate не оставляет постоянную вторую копию каждой ротации в cache: после truncate лишние страницы active inode уходят. Но при каждом следующем копировании появляется transient ещё на один полный файл, поэтому пила растёт как <code>retained backups + 50 MiB</code>. Rename/reopen растёт почти линейно без этих дополнительных зубцов.
+  </div>
+
+  <h3>Почему minimum не равен размеру копируемого файла</h3>
+  <p>Copytruncate читает и записывает файл потоком. Пока новые страницы входят в cache, Linux параллельно выполняет writeback и reclaim старых clean pages. OOM определяется максимальным <b>одновременным невытесняемым окном</b>, а не суммой размеров файлов на диске. Удвоение файла с 50 до 100 MiB удлинило время, в течение которого copy конкурирует за память, и подняло проверенную границу на 4 MiB, но не потребовало держать дополнительные 50 MiB resident.</p>
+
+  <table class="wrap">
+    <thead><tr><th>Фактор</th><th>Что проверено в стенде</th><th>Как влияет</th></tr></thead>
+    <tbody>
+      <tr><td>Anonymous working set</td><td>Peak anon примерно 48–53 MiB</td><td>Практически невытесняемая база container limit</td></tr>
+      <tr><td>Способ копирования</td><td><code>os.Open → os.Create → io.Copy → Sync</code>; native strace показал <code>copy_file_range</code> и <code>fsync</code></td><td>Нет большого userspace-буфера, но source/destination pages всё равно проходят через kernel file cache</td></tr>
+      <tr><td>Writeback</td><td><code>dirty_background_ratio=10</code>, <code>dirty_ratio=20</code>, writeback 15 s в Linux VM</td><td>Определяет, сколько dirty destination pages нельзя немедленно reclaim</td></tr>
+      <tr><td>Cgroup reclaim</td><td><code>memory.high=max</code>, <code>memory.swap.max=0</code></td><td>При приближении к <code>memory.max</code> ядро вытесняет clean cache; если reclaim не успел — OOM</td></tr>
+      <tr><td>Filesystem/kernel</td><td>Linux 6.10.14-linuxkit, Docker named volume (ext2/ext3), block 4096</td><td>Меняет реализацию copy, writeback latency и эффективность reclaim</td></tr>
+      <tr><td>Скорость записи</td><td>Writer 8 MiB/s, flush каждые 100 ms</td><td>Меняет отношение production новых страниц к writeback/reclaim</td></tr>
+      <tr><td>Retained backups</td><td>Проверено 5 файлов по 50 MiB</td><td>Растит disk usage и cache без давления, но clean pages не резервируют RAM</td></tr>
+      <tr><td>Sampling</td><td>20 ms в pressure-тестах</td><td>Меняет видимость пика в отчёте, но не решение ядра об OOM</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout" style="margin:16px 0 24px">
+    <b>Что переносить в production.</b> Абсолютные 68/72 MiB зависят от Linux, filesystem, storage latency, writer rate и фоновой нагрузки. Устойчивый результат этого стенда — форма зависимости: copytruncate требует дополнительного headroom и даёт transient-пилу; rename + reopen остаётся близко к baseline. Production sizing нужно повторить на целевом kernel/storage и с реальным Envoy.
   </div>
 
   <h3>Одна ротация при общем container limit 192 MiB</h3>
@@ -266,11 +298,12 @@
     <div class="card">
       <h3>Memory boundary</h3>
       <ul>
-        <li>Файл: 50 MiB, одна ротация</li>
+        <li>Файлы: 50 и 100 MiB</li>
+        <li>Ротации: 1 и 5; для серии <code>max-backups=5</code></li>
         <li>Поток: 8 MiB/s, record 512 B</li>
         <li>Buffer: 64 KiB, flush 100 ms</li>
         <li>Resident allocation: 32 MiB</li>
-        <li>Диапазон: 32–192 MiB, шаг 4 MiB</li>
+        <li>Pressure-кандидаты: соседние limits, шаг 4 MiB</li>
         <li>Три повтора каждого кандидата</li>
         <li><code>--memory-swap == --memory</code></li>
       </ul>
@@ -293,7 +326,7 @@
   <ol>
     <li><b>Это сравнительный стенд, не sizing настоящего Envoy.</b> C++ writer не воспроизводит allocator, worker threads и полную access-log реализацию Envoy.</li>
     <li>Числа получены внутри Linux VM Docker Desktop. Production kernel, filesystem, cgroup и storage class могут изменить reclaim/writeback.</li>
-    <li>Основной результат получен для одной ротации файла 50 MiB. Несколько одновременно удерживаемых backup-файлов и другой writeback rate могут изменить абсолютную границу.</li>
+    <li>Проверены 50 и 100 MiB и серия из пяти ротаций. Это не доказывает ту же численную границу для иных размеров, write rate или числа backup-файлов.</li>
     <li>График пяти ротаций снят при высоком лимите 768 MiB, поэтому показывает накопление без активного cgroup reclaim. Под жёстким production limit старые clean cache pages могут вытесняться раньше.</li>
     <li>Baseline содержит обычную запись того же объёма и служит reference, но не является строгой нижней границей.</li>
     <li>Потеря copytruncate зависит от scheduling и flush timing; отсутствие потери в одном запуске не доказывает безопасность алгоритма.</li>
@@ -313,12 +346,20 @@
 ./scripts/compare-50m-5x.sh
 
 # Профиль 50 MiB: 3 повтора, шаг 4 MiB
-./scripts/memory-sweep-50m.sh</pre>
+./scripts/memory-sweep-50m.sh
+
+# Pressure-границы: 50/100 MiB и 1/5 ротаций, по 3 повтора
+./scripts/pressure-boundaries.sh</pre>
 
   <h2>Исходные данные</h2>
   <ul>
     <li><a href="../results/compare-50m-5x-20260730T200957/comparison.json">Пять ротаций по 50 MiB, JSON</a></li>
     <li><a href="assets/cache-50m-5x.svg">Временной график пяти ротаций, SVG</a></li>
+    <li><a href="../results/size-candidates-20260730T214154/100m-copy-72.json">Copytruncate 100 MiB при 72 MiB, 3/3 pass</a></li>
+    <li><a href="../results/size-candidates-20260730T214154/100m-copy-68.json">Copytruncate 100 MiB при 68 MiB, 3/3 OOM</a></li>
+    <li><a href="../results/repeated-pressure-candidates-20260730T214835/copy-68.json">Copytruncate 5 × 50 MiB при 68 MiB, 3/3 pass</a></li>
+    <li><a href="../results/repeated-pressure-candidates-20260730T214835/copy-64.json">Copytruncate 5 × 50 MiB при 64 MiB, 3/3 OOM</a></li>
+    <li><a href="copyprobe-strace.txt">Syscall probe: <code>copy_file_range</code> + <code>fsync</code></a></li>
     <li><a href="../results/memory-sweep-50m.json">Основной memory sweep 50 MiB, JSON</a></li>
     <li><a href="../results/memory-sweep-repeated-4m.json">Трёхкратный memory sweep, JSON</a></li>
     <li><a href="../results/compare-20260730T190350/comparison.json">Финальное сравнение стратегий, JSON</a></li>

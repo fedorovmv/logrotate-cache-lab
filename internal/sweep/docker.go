@@ -18,12 +18,12 @@ import (
 )
 
 type DockerConfig struct {
-	Image, ResultRoot                           string
-	LowerMiB, UpperMiB, StepMiB, Repetitions    int
-	MaxFileBytes, BytesPerSecond, ResidentBytes int64
-	Rotations, RecordBytes, BufferBytes         int
-	FlushInterval, MonitorInterval              time.Duration
-	AttemptTimeout                              time.Duration
+	Image, ResultRoot                               string
+	LowerMiB, UpperMiB, StepMiB, Repetitions        int
+	MaxFileBytes, BytesPerSecond, ResidentBytes     int64
+	Rotations, MaxBackups, RecordBytes, BufferBytes int
+	FlushInterval, MonitorInterval                  time.Duration
+	AttemptTimeout                                  time.Duration
 }
 
 func DockerSearch(ctx context.Context, cfg DockerConfig, strategy rotator.Strategy) (report.SweepReport, error) {
@@ -40,7 +40,7 @@ func DockerSearch(ctx context.Context, cfg DockerConfig, strategy rotator.Strate
 
 func dockerWorkload(cfg DockerConfig) report.WorkloadConfig {
 	return report.WorkloadConfig{
-		MaxFileBytes: cfg.MaxFileBytes, Rotations: cfg.Rotations, MaxBackups: 0,
+		MaxFileBytes: cfg.MaxFileBytes, Rotations: cfg.Rotations, MaxBackups: cfg.MaxBackups,
 		RecordBytes: cfg.RecordBytes, BytesPerSecond: cfg.BytesPerSecond, BufferBytes: cfg.BufferBytes,
 		FlushIntervalNS: cfg.FlushInterval.Nanoseconds(), MonitorIntervalNS: cfg.MonitorInterval.Nanoseconds(),
 		ResidentBytes: cfg.ResidentBytes,
@@ -71,7 +71,7 @@ func dockerAttempt(ctx context.Context, cfg DockerConfig, strategy rotator.Strat
 		"--mount", "source=" + volume + ",target=/var/log/loglab", "--mount", "type=bind,source=" + runDir + ",target=/results", cfg.Image,
 		"run", "--run-id", fmt.Sprintf("%s-%d-%d", strategy, attempt.LimitMiB, attempt.Repetition), "--strategy", string(strategy),
 		"--log-dir", "/var/log/loglab", "--result-dir", "/results", "--max-file-bytes", strconv.FormatInt(cfg.MaxFileBytes, 10),
-		"--rotations", strconv.Itoa(cfg.Rotations), "--max-backups", "0", "--record-bytes", strconv.Itoa(cfg.RecordBytes),
+		"--rotations", strconv.Itoa(cfg.Rotations), "--max-backups", strconv.Itoa(cfg.MaxBackups), "--record-bytes", strconv.Itoa(cfg.RecordBytes),
 		"--bytes-per-second", strconv.FormatInt(cfg.BytesPerSecond, 10), "--buffer-bytes", strconv.Itoa(cfg.BufferBytes),
 		"--flush-interval", cfg.FlushInterval.String(), "--monitor-interval", cfg.MonitorInterval.String(), "--resident-bytes", strconv.FormatInt(cfg.ResidentBytes, 10)}
 	attemptTimeout := cfg.AttemptTimeout

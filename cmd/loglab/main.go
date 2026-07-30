@@ -58,6 +58,7 @@ func memorySweepCommand(args []string) error {
 	fs.IntVar(&cfg.Repetitions, "repetitions", 3, "successful repetitions required")
 	fs.Int64Var(&cfg.MaxFileBytes, "max-file-bytes", 32*1024*1024, "rotation threshold")
 	fs.IntVar(&cfg.Rotations, "rotations", 4, "rotations per attempt")
+	fs.IntVar(&cfg.MaxBackups, "max-backups", 0, "retained backups; zero is unlimited")
 	fs.IntVar(&cfg.RecordBytes, "record-bytes", 512, "record size")
 	fs.Int64Var(&cfg.BytesPerSecond, "bytes-per-second", 8*1024*1024, "writer rate")
 	fs.IntVar(&cfg.BufferBytes, "buffer-bytes", 64*1024, "writer buffer")

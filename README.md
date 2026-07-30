@@ -60,6 +60,7 @@ make docker-smoke
 ./scripts/memory-sweep.sh --quick
 ./scripts/memory-sweep.sh
 ./scripts/memory-sweep-50m.sh
+./scripts/pressure-boundaries.sh
 ./scripts/kind-sweep.sh --quick
 ```
 
@@ -77,6 +78,18 @@ three required repetitions. Its `--quick` mode uses one repetition and a
 rotations with `max-backups=5`, a 20 ms sampling interval, and the same 768 MiB
 container limit for both strategies. It writes a time-series SVG next to the
 CSV and JSON results.
+
+`pressure-boundaries.sh` checks whether the one-rotation memory boundary still
+holds across five retained 50 MiB files, and repeats the same boundary check
+with a 100 MiB active file. Every boundary candidate requires three runs; use
+`--quick` only to validate the pipeline with one run.
+
+The measured comparison, charts, interpretation, and limitations are in the
+human-readable [HTML report](reports/logrotate-cache-report.html). In the
+current Docker Desktop environment, the adjacent pressure candidates were
+64/68 MiB (fail/pass) for one and five 50 MiB copytruncate rotations, 68/72 MiB
+for one 100 MiB copytruncate rotation, and 52/56 MiB for the 100 MiB baseline,
+100 MiB rename-reopen, and five 50 MiB rename-reopen rotations.
 
 Generated reports are written below `results/`. The scripts remove only the
 containers, named volumes, temporary manifests, and kind cluster that they
@@ -156,8 +169,11 @@ descending transition, or a failed reopen makes the attempt fail. Rename keeps
 the old inode valid until the writer processes reopen, so records written in
 that interval remain in the renamed backup.
 
-The C++ emulator matches the production rotator's significant sequence
-`open → io.Copy → backup Sync → active truncate`. It does not reproduce Envoy's
+The Go copy rotator matches the production rotator's significant sequence
+`open → io.Copy → backup Sync → active truncate`; the C++ process only emulates
+the independent Envoy writer. On Linux the probe in `tools/copyprobe` confirms
+that this file-to-file `io.Copy` uses `copy_file_range`, followed by `fsync`.
+The lab does not reproduce Envoy's
 exact access-log implementation, allocator, or worker/thread scheduling, so it
 demonstrates the race and cache cost but does not predict the exact number of
 lost production log lines.

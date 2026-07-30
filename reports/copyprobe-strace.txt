@@ -1,0 +1,21 @@
+Copy syscall probe
+==================
+
+Date: 2026-07-30
+Container: native arm64 golang:1.25-alpine
+Filesystem target: Docker named volume
+Probe: tools/copyprobe/main.go
+Input size: 4 MiB
+Trace filter: copy_file_range, read, write, fsync
+
+Relevant strace output:
+
+copy_file_range(3, NULL, 6, NULL, 2147479552, 0) = 4194304
+copy_file_range(3, NULL, 6, NULL, 2147479552, 0) = 0
+fsync(6)                                = 0
++++ exited with 0 +++
+
+The probe uses the same os.Open -> os.Create -> io.Copy -> Sync sequence as
+the copy step in the lab rotator. It establishes the syscall selected by this
+Go/Linux environment; another Go release, kernel, filesystem, or mount may
+select a different path.

@@ -1,4 +1,4 @@
-.PHONY: test vet build build-go build-cpp docker-build docker-smoke compare compare-50m-5x memory-sweep memory-sweep-50m kind-sweep
+.PHONY: test vet build build-go build-cpp docker-build docker-smoke compare compare-50m-5x memory-sweep memory-sweep-50m pressure-boundaries kind-sweep
 
 IMAGE ?= logrotate-cache-lab:dev
 CXX ?= c++
@@ -46,6 +46,9 @@ memory-sweep:
 
 memory-sweep-50m:
 	./scripts/memory-sweep-50m.sh
+
+pressure-boundaries:
+	./scripts/pressure-boundaries.sh
 
 kind-sweep:
 	./scripts/kind-sweep.sh --quick
