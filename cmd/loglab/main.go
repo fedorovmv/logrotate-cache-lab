@@ -7,13 +7,16 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
 
 	"logrotate-cache-lab/internal/harness"
 	"logrotate-cache-lab/internal/monitor"
+	"logrotate-cache-lab/internal/report"
 	"logrotate-cache-lab/internal/rotator"
+	"logrotate-cache-lab/internal/sweep"
 	"logrotate-cache-lab/internal/writer"
 )
 
@@ -31,12 +34,73 @@ func main() {
 		err = monitorCommand(os.Args[2:])
 	case "run":
 		err = runCommand(os.Args[2:])
+	case "memory-sweep":
+		err = memorySweepCommand(os.Args[2:])
 	default:
 		err = fmt.Errorf("unknown command %q", os.Args[1])
 	}
 	if err != nil {
 		fatalf("%v", err)
 	}
+}
+
+func memorySweepCommand(args []string) error {
+	fs := flag.NewFlagSet("memory-sweep", flag.ContinueOnError)
+	var cfg sweep.DockerConfig
+	var strategy, output string
+	fs.StringVar(&cfg.Image, "image", "logrotate-cache-lab:dev", "Docker image")
+	fs.StringVar(&cfg.ResultRoot, "result-root", "results/sweep-attempts", "attempt result root")
+	fs.StringVar(&output, "output", "results/memory-sweep.json", "combined report path")
+	fs.StringVar(&strategy, "strategy", "both", "copytruncate, rename-reopen, or both")
+	fs.IntVar(&cfg.LowerMiB, "lower-mib", 64, "lower memory bound")
+	fs.IntVar(&cfg.UpperMiB, "upper-mib", 512, "upper memory bound")
+	fs.IntVar(&cfg.StepMiB, "step-mib", 4, "search resolution")
+	fs.IntVar(&cfg.Repetitions, "repetitions", 3, "successful repetitions required")
+	fs.Int64Var(&cfg.MaxFileBytes, "max-file-bytes", 32*1024*1024, "rotation threshold")
+	fs.IntVar(&cfg.Rotations, "rotations", 4, "rotations per attempt")
+	fs.IntVar(&cfg.RecordBytes, "record-bytes", 512, "record size")
+	fs.Int64Var(&cfg.BytesPerSecond, "bytes-per-second", 8*1024*1024, "writer rate")
+	fs.IntVar(&cfg.BufferBytes, "buffer-bytes", 64*1024, "writer buffer")
+	fs.DurationVar(&cfg.FlushInterval, "flush-interval", 100*time.Millisecond, "writer flush interval")
+	fs.DurationVar(&cfg.MonitorInterval, "monitor-interval", 100*time.Millisecond, "monitor interval")
+	fs.DurationVar(&cfg.AttemptTimeout, "attempt-timeout", 90*time.Second, "timeout for one Docker attempt")
+	fs.Int64Var(&cfg.ResidentBytes, "resident-bytes", 32*1024*1024, "touched resident allocation")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(cfg.ResultRoot, 0o755); err != nil {
+		return err
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+	var strategies []rotator.Strategy
+	switch strategy {
+	case "both":
+		strategies = []rotator.Strategy{rotator.CopyTruncate, rotator.RenameReopen}
+	case string(rotator.CopyTruncate), string(rotator.RenameReopen):
+		strategies = []rotator.Strategy{rotator.Strategy(strategy)}
+	default:
+		return fmt.Errorf("unknown strategy %q", strategy)
+	}
+	combined := struct {
+		SchemaVersion int                  `json:"schema_version"`
+		Reports       []report.SweepReport `json:"reports"`
+	}{SchemaVersion: report.SchemaVersion}
+	for _, selected := range strategies {
+		result, err := sweep.DockerSearch(ctx, cfg, selected)
+		combined.Reports = append(combined.Reports, result)
+		if err != nil {
+			_ = report.WriteJSONAtomic(output, combined)
+			return err
+		}
+		fmt.Printf("%-14s minimum=%dMiB greatest-fail=%dMiB attempts=%d\n", selected, result.MinimumPassMiB, result.GreatestFailMiB, len(result.Attempts))
+	}
+	if err := report.WriteJSONAtomic(output, combined); err != nil {
+		return err
+	}
+	abs, _ := filepath.Abs(output)
+	fmt.Printf("report: %s\n", abs)
+	return nil
 }
 
 func writerCommand(args []string) error {

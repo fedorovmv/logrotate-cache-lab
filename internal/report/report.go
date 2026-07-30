@@ -104,22 +104,30 @@ type ComparisonReport struct {
 }
 
 type SweepAttempt struct {
-	Strategy   string      `json:"strategy"`
-	LimitMiB   int         `json:"limit_mib"`
-	Repetition int         `json:"repetition"`
-	ExitCode   int         `json:"exit_code"`
-	OOM        bool        `json:"oom"`
-	Passed     bool        `json:"passed"`
-	Error      string      `json:"error,omitempty"`
-	Summary    *RunSummary `json:"summary,omitempty"`
+	Strategy         string      `json:"strategy"`
+	LimitMiB         int         `json:"limit_mib"`
+	Repetition       int         `json:"repetition"`
+	ExitCode         int         `json:"exit_code"`
+	OOM              bool        `json:"oom"`
+	TimedOut         bool        `json:"timed_out"`
+	FunctionalPassed bool        `json:"functional_passed"`
+	IntegrityPassed  bool        `json:"integrity_passed"`
+	Passed           bool        `json:"passed"`
+	FailureKind      string      `json:"failure_kind,omitempty"`
+	Error            string      `json:"error,omitempty"`
+	Summary          *RunSummary `json:"summary,omitempty"`
 }
 
 type SweepReport struct {
-	SchemaVersion   int            `json:"schema_version"`
-	Strategy        string         `json:"strategy"`
-	MinimumPassMiB  int            `json:"minimum_pass_mib"`
-	GreatestFailMiB int            `json:"greatest_fail_mib"`
-	Attempts        []SweepAttempt `json:"attempts"`
+	SchemaVersion      int            `json:"schema_version"`
+	Strategy           string         `json:"strategy"`
+	MinimumPassMiB     int            `json:"minimum_pass_mib"`
+	GreatestFailMiB    int            `json:"greatest_fail_mib"`
+	OOMFailures        int            `json:"oom_failures"`
+	TimeoutFailures    int            `json:"timeout_failures"`
+	FunctionalFailures int            `json:"functional_failures"`
+	IntegrityFailures  int            `json:"integrity_failures"`
+	Attempts           []SweepAttempt `json:"attempts"`
 }
 
 func WriteJSONAtomic(path string, value any) error {
