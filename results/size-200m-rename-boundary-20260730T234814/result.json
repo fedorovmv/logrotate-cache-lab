@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "reports": [
+    {
+      "schema_version": 1,
+      "strategy": "rename-reopen",
+      "minimum_pass_mib": 0,
+      "greatest_fail_mib": 52,
+      "boundary_resolved": false,
+      "delta_minimum_mib": 0,
+      "delta_resolved": false,
+      "oom_failures": 1,
+      "timeout_failures": 0,
+      "functional_failures": 0,
+      "integrity_failures": 0,
+      "lower_mib": 48,
+      "upper_mib": 52,
+      "step_mib": 4,
+      "repetitions": 3,
+      "attempt_timeout_ns": 90000000000,
+      "workload": {
+        "max_file_bytes": 209715200,
+        "rotations": 1,
+        "max_backups": 1,
+        "record_bytes": 512,
+        "bytes_per_second": 8388608,
+        "buffer_bytes": 65536,
+        "flush_interval_ns": 100000000,
+        "monitor_interval_ns": 20000000,
+        "resident_bytes": 33554432
+      },
+      "attempts": [
+        {
+          "strategy": "rename-reopen",
+          "limit_mib": 52,
+          "repetition": 1,
+          "exit_code": 0,
+          "oom": false,
+          "timed_out": false,
+          "functional_passed": true,
+          "integrity_passed": true,
+          "passed": true,
+          "summary": {
+            "schema_version": 1,
+            "run_id": "rename-reopen-52-1",
+            "strategy": "rename-reopen",
+            "success": true,
+            "started_at": "2026-07-30T20:48:15.432882465Z",
+            "duration_ns": 25327567470,
+            "cgroup_version": "v2",
+            "cache_source": "file",
+            "rotations": 1,
+            "workload": {
+              "max_file_bytes": 209715200,
+              "rotations": 1,
+              "max_backups": 1,
+              "record_bytes": 512,
+              "bytes_per_second": 8388608,
+              "buffer_bytes": 65536,
+              "flush_interval_ns": 100000000,
+              "monitor_interval_ns": 20000000,
+              "resident_bytes": 33554432
+            },
+            "peak_memory": 54534144,
+            "peak_rss": 67969024,
+            "peak_anon": 51417088,
+            "cache": {
+              "start_bytes": 278528,
+              "end_bytes": 892928,
+              "max_bytes": 5103616,
+              "mean_bytes": 1431422.6698641088,
+              "median_bytes": 1245184,
+              "p95_bytes": 2846720,
+              "overall_rate_bytes_per_second": 24575.518580336324,
+              "positive_rate_bytes_per_second": 2634518.1849324834,
+              "reclaim_rate_bytes_per_second": 8167733.643679677,
+              "rotation_transient_max_bytes": 0,
+              "rotation_interval_slopes": [
+                -71563.84601768435
+              ]
+            },
+            "writer": {
+              "generated": 410480,
+              "written": 410480,
+              "reopen_requests": 1,
+              "reopen_failures": 0
+            },
+            "writer_implementation": "logwriter-cpp",
+            "integrity": {
+              "schema_version": 1,
+              "expected": 410480,
+              "valid_unique": 410480,
+              "missing": 0,
+              "duplicates": 0,
+              "malformed": 0,
+              "wrong_run_id": 0,
+              "descending_transitions": 0,
+              "files": {
+                "envoy.log": {
+                  "records": 378,
+                  "min": 410103,
+                  "max": 410480
+                },
+                "envoy.log.000001": {
+                  "records": 410102,
+                  "min": 1,
+                  "max": 410102
+                }
+              }
+            }
+          }
+        },
+        {
+          "strategy": "rename-reopen",
+          "limit_mib": 52,
+          "repetition": 2,
+          "exit_code": 0,
+          "oom": false,
+          "timed_out": false,
+          "functional_passed": true,
+          "integrity_passed": true,
+          "passed": true,
+          "summary": {
+            "schema_version": 1,
+            "run_id": "rename-reopen-52-2",
+            "strategy": "rename-reopen",
+            "success": true,
+            "started_at": "2026-07-30T20:48:41.119260505Z",
+            "duration_ns": 25337210345,
+            "cgroup_version": "v2",
+            "cache_source": "file",
+            "rotations": 1,
+            "workload": {
+              "max_file_bytes": 209715200,
+              "rotations": 1,
+              "max_backups": 1,
+              "record_bytes": 512,
+              "bytes_per_second": 8388608,
+              "buffer_bytes": 65536,
+              "flush_interval_ns": 100000000,
+              "monitor_interval_ns": 20000000,
+              "resident_bytes": 33554432
+            },
+            "peak_memory": 54534144,
+            "peak_rss": 65298432,
+            "peak_anon": 48906240,
+            "cache": {
+              "start_bytes": 380928,
+              "end_bytes": 3010560,
+              "max_bytes": 6672384,
+              "mean_bytes": 3500603.3445243803,
+              "median_bytes": 3317760,
+              "p95_bytes": 5210112,
+              "overall_rate_bytes_per_second": 105183.24231029069,
+              "positive_rate_bytes_per_second": 2930089.051422371,
+              "reclaim_rate_bytes_per_second": 8035628.875302945,
+              "rotation_transient_max_bytes": 0,
+              "rotation_interval_slopes": [
+                -67051.81979849127
+              ]
+            },
+            "writer": {
+              "generated": 410499,
+              "written": 410499,
+              "reopen_requests": 1,
+              "reopen_failures": 0
+            },
+            "writer_implementation": "logwriter-cpp",
+            "integrity": {
+              "schema_version": 1,
+              "expected": 410499,
+              "valid_unique": 410499,
+              "missing": 0,
+              "duplicates": 0,
+              "malformed": 0,
+              "wrong_run_id": 0,
+              "descending_transitions": 0,
+              "files": {
+                "envoy.log": {
+                  "records": 378,
+                  "min": 410122,
+                  "max": 410499
+                },
+                "envoy.log.000001": {
+                  "records": 410121,
+                  "min": 1,
+                  "max": 410121
+                }
+              }
+            }
+          }
+        },
+        {
+          "strategy": "rename-reopen",
+          "limit_mib": 52,
+          "repetition": 3,
+          "exit_code": 137,
+          "oom": true,
+          "timed_out": false,
+          "functional_passed": false,
+          "integrity_passed": false,
+          "passed": false,
+          "failure_kind": "oom",
+          "error": "docker attempt failed"
+        }
+      ]
+    }
+  ]
+}

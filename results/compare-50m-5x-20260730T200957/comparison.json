@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "schema_version": 1,
+      "run_id": "50m-5x-copytruncate",
+      "strategy": "copytruncate",
+      "success": true,
+      "started_at": "2026-07-30T17:09:59.912780511Z",
+      "duration_ns": 31909740557,
+      "cgroup_version": "v2",
+      "cache_source": "file",
+      "rotations": 5,
+      "workload": {
+        "max_file_bytes": 52428800,
+        "rotations": 5,
+        "max_backups": 5,
+        "record_bytes": 512,
+        "bytes_per_second": 8388608,
+        "buffer_bytes": 65536,
+        "flush_interval_ns": 100000000,
+        "monitor_interval_ns": 20000000,
+        "resident_bytes": 33554432
+      },
+      "peak_memory": 383803392,
+      "peak_rss": 68943872,
+      "peak_anon": 52412416,
+      "cache": {
+        "start_bytes": 286720,
+        "end_bytes": 264925184,
+        "max_bytes": 317595648,
+        "mean_bytes": 132765703.76738305,
+        "median_bytes": 132804608,
+        "p95_bytes": 251912192,
+        "overall_rate_bytes_per_second": 8369367.988022339,
+        "positive_rate_bytes_per_second": 16784556.96674403,
+        "reclaim_rate_bytes_per_second": 2644445658.829589,
+        "rotation_transient_max_bytes": 49958912,
+        "rotation_interval_slopes": [
+          8797539.230424274,
+          8616871.553139215,
+          8704318.325545037,
+          8727439.132573137,
+          8752247.200447833
+        ]
+      },
+      "writer": {
+        "generated": 518684,
+        "written": 518684,
+        "reopen_requests": 0,
+        "reopen_failures": 0
+      },
+      "writer_implementation": "logwriter-cpp",
+      "integrity": {
+        "schema_version": 1,
+        "expected": 518684,
+        "valid_unique": 516906,
+        "missing": 1778,
+        "duplicates": 0,
+        "malformed": 0,
+        "wrong_run_id": 0,
+        "descending_transitions": 0,
+        "missing_examples": [
+          103782,
+          103783,
+          103784,
+          103785,
+          103786,
+          103787,
+          103788,
+          103789,
+          103790,
+          103791,
+          103792,
+          103793,
+          103794,
+          103795,
+          103796,
+          103797,
+          103798,
+          103799,
+          103800,
+          103801,
+          103802,
+          103803,
+          103804,
+          103805,
+          103806,
+          103807,
+          103808,
+          103809,
+          103810,
+          103811,
+          103812,
+          103813,
+          103814,
+          103815,
+          103816,
+          103817,
+          103818,
+          103819,
+          103820,
+          103821,
+          103822,
+          103823,
+          103824,
+          103825,
+          103826,
+          103827,
+          103828,
+          103829,
+          103830,
+          103831,
+          103832,
+          103833,
+          103834,
+          103835,
+          103836,
+          103837,
+          103838,
+          103839,
+          103840,
+          103841,
+          103842,
+          103843,
+          103844,
+          103845,
+          103846,
+          103847,
+          103848,
+          103849,
+          103850,
+          103851,
+          103852,
+          103853,
+          103854,
+          103855,
+          103856,
+          103857,
+          103858,
+          103859,
+          103860,
+          103861,
+          103862,
+          103863,
+          103864,
+          103865,
+          103866,
+          103867,
+          103868,
+          103869,
+          103870,
+          103871,
+          103872,
+          103873,
+          103874,
+          103875,
+          103876,
+          103877,
+          103878,
+          103879,
+          103880,
+          103881
+        ],
+        "files": {
+          "envoy.log": {
+            "records": 353,
+            "min": 518332,
+            "max": 518684
+          },
+          "envoy.log.000001": {
+            "records": 103781,
+            "min": 1,
+            "max": 103781
+          },
+          "envoy.log.000002": {
+            "records": 103034,
+            "min": 104178,
+            "max": 207211
+          },
+          "envoy.log.000003": {
+            "records": 103201,
+            "min": 207428,
+            "max": 310628
+          },
+          "envoy.log.000004": {
+            "records": 103496,
+            "min": 311023,
+            "max": 414518
+          },
+          "envoy.log.000005": {
+            "records": 103041,
+            "min": 414907,
+            "max": 517947
+          }
+        }
+      }
+    },
+    {
+      "schema_version": 1,
+      "run_id": "50m-5x-rename-reopen",
+      "strategy": "rename-reopen",
+      "success": true,
+      "started_at": "2026-07-30T17:10:32.100511303Z",
+      "duration_ns": 31610610931,
+      "cgroup_version": "v2",
+      "cache_source": "file",
+      "rotations": 5,
+      "workload": {
+        "max_file_bytes": 52428800,
+        "rotations": 5,
+        "max_backups": 5,
+        "record_bytes": 512,
+        "bytes_per_second": 8388608,
+        "buffer_bytes": 65536,
+        "flush_interval_ns": 100000000,
+        "monitor_interval_ns": 20000000,
+        "resident_bytes": 33554432
+      },
+      "peak_memory": 327892992,
+      "peak_rss": 70283264,
+      "peak_anon": 52908032,
+      "cache": {
+        "start_bytes": 368640,
+        "end_bytes": 263184384,
+        "max_bytes": 263184384,
+        "mean_bytes": 131490589.752235,
+        "median_bytes": 131338240,
+        "p95_bytes": 250073088,
+        "overall_rate_bytes_per_second": 8396607.016169645,
+        "positive_rate_bytes_per_second": 8396607.016169656,
+        "reclaim_rate_bytes_per_second": 0,
+        "rotation_transient_max_bytes": 0,
+        "rotation_interval_slopes": [
+          8393112.637557844,
+          8396290.567711119,
+          8393325.428704869,
+          8396323.677748663,
+          8394548.565964649
+        ]
+      },
+      "writer": {
+        "generated": 513716,
+        "written": 513716,
+        "reopen_requests": 5,
+        "reopen_failures": 0
+      },
+      "writer_implementation": "logwriter-cpp",
+      "integrity": {
+        "schema_version": 1,
+        "expected": 513716,
+        "valid_unique": 513716,
+        "missing": 0,
+        "duplicates": 0,
+        "malformed": 0,
+        "wrong_run_id": 0,
+        "descending_transitions": 0,
+        "files": {
+          "envoy.log": {
+            "records": 389,
+            "min": 513328,
+            "max": 513716
+          },
+          "envoy.log.000001": {
+            "records": 102666,
+            "min": 1,
+            "max": 102666
+          },
+          "envoy.log.000002": {
+            "records": 102665,
+            "min": 102667,
+            "max": 205331
+          },
+          "envoy.log.000003": {
+            "records": 102435,
+            "min": 205332,
+            "max": 307766
+          },
+          "envoy.log.000004": {
+            "records": 102557,
+            "min": 307767,
+            "max": 410323
+          },
+          "envoy.log.000005": {
+            "records": 103004,
+            "min": 410324,
+            "max": 513327
+          }
+        }
+      }
+    }
+  ]
+}

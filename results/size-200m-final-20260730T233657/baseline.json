@@ -1,0 +1,362 @@
+{
+  "schema_version": 1,
+  "reports": [
+    {
+      "schema_version": 1,
+      "strategy": "baseline",
+      "minimum_pass_mib": 56,
+      "greatest_fail_mib": 52,
+      "boundary_resolved": true,
+      "delta_minimum_mib": 0,
+      "delta_resolved": false,
+      "oom_failures": 2,
+      "timeout_failures": 0,
+      "functional_failures": 0,
+      "integrity_failures": 0,
+      "lower_mib": 52,
+      "upper_mib": 56,
+      "step_mib": 4,
+      "repetitions": 3,
+      "attempt_timeout_ns": 90000000000,
+      "workload": {
+        "max_file_bytes": 209715200,
+        "rotations": 1,
+        "max_backups": 1,
+        "record_bytes": 512,
+        "bytes_per_second": 8388608,
+        "buffer_bytes": 65536,
+        "flush_interval_ns": 100000000,
+        "monitor_interval_ns": 20000000,
+        "resident_bytes": 33554432
+      },
+      "attempts": [
+        {
+          "strategy": "baseline",
+          "limit_mib": 56,
+          "repetition": 1,
+          "exit_code": 0,
+          "oom": false,
+          "timed_out": false,
+          "functional_passed": true,
+          "integrity_passed": true,
+          "passed": true,
+          "summary": {
+            "schema_version": 1,
+            "run_id": "baseline-56-1",
+            "strategy": "baseline",
+            "success": true,
+            "started_at": "2026-07-30T20:36:58.250600388Z",
+            "duration_ns": 25326877469,
+            "cgroup_version": "v2",
+            "cache_source": "file",
+            "rotations": 1,
+            "workload": {
+              "max_file_bytes": 209715200,
+              "rotations": 1,
+              "max_backups": 1,
+              "record_bytes": 512,
+              "bytes_per_second": 8388608,
+              "buffer_bytes": 65536,
+              "flush_interval_ns": 100000000,
+              "monitor_interval_ns": 20000000,
+              "resident_bytes": 33554432
+            },
+            "peak_memory": 58724352,
+            "peak_rss": 68087808,
+            "peak_anon": 51900416,
+            "cache": {
+              "start_bytes": 278528,
+              "end_bytes": 4440064,
+              "max_bytes": 6950912,
+              "mean_bytes": 4659093.589128697,
+              "median_bytes": 4665344,
+              "p95_bytes": 5394432,
+              "overall_rate_bytes_per_second": 166458.95125224476,
+              "positive_rate_bytes_per_second": 2958863.2992318394,
+              "reclaim_rate_bytes_per_second": 8410177.79011629,
+              "rotation_transient_max_bytes": 0,
+              "rotation_interval_slopes": [
+                -20290.30031557932
+              ]
+            },
+            "writer": {
+              "generated": 410325,
+              "written": 410325,
+              "reopen_requests": 0,
+              "reopen_failures": 0
+            },
+            "writer_implementation": "logwriter-cpp",
+            "integrity": {
+              "schema_version": 1,
+              "expected": 410325,
+              "valid_unique": 410325,
+              "missing": 0,
+              "duplicates": 0,
+              "malformed": 0,
+              "wrong_run_id": 0,
+              "descending_transitions": 0,
+              "files": {
+                "envoy.log": {
+                  "records": 410325,
+                  "min": 1,
+                  "max": 410325
+                }
+              }
+            }
+          }
+        },
+        {
+          "strategy": "baseline",
+          "limit_mib": 56,
+          "repetition": 2,
+          "exit_code": 0,
+          "oom": false,
+          "timed_out": false,
+          "functional_passed": true,
+          "integrity_passed": true,
+          "passed": true,
+          "summary": {
+            "schema_version": 1,
+            "run_id": "baseline-56-2",
+            "strategy": "baseline",
+            "success": true,
+            "started_at": "2026-07-30T20:37:23.928126261Z",
+            "duration_ns": 25318840637,
+            "cgroup_version": "v2",
+            "cache_source": "file",
+            "rotations": 1,
+            "workload": {
+              "max_file_bytes": 209715200,
+              "rotations": 1,
+              "max_backups": 1,
+              "record_bytes": 512,
+              "bytes_per_second": 8388608,
+              "buffer_bytes": 65536,
+              "flush_interval_ns": 100000000,
+              "monitor_interval_ns": 20000000,
+              "resident_bytes": 33554432
+            },
+            "peak_memory": 58724352,
+            "peak_rss": 67862528,
+            "peak_anon": 51326976,
+            "cache": {
+              "start_bytes": 389120,
+              "end_bytes": 4157440,
+              "max_bytes": 7049216,
+              "mean_bytes": 4665599.795036029,
+              "median_bytes": 4640768,
+              "p95_bytes": 5627904,
+              "overall_rate_bytes_per_second": 150971.79421398524,
+              "positive_rate_bytes_per_second": 2906867.60981557,
+              "reclaim_rate_bytes_per_second": 8188070.223100141,
+              "rotation_transient_max_bytes": 0,
+              "rotation_interval_slopes": [
+                -43509.23497530973
+              ]
+            },
+            "writer": {
+              "generated": 409890,
+              "written": 409890,
+              "reopen_requests": 0,
+              "reopen_failures": 0
+            },
+            "writer_implementation": "logwriter-cpp",
+            "integrity": {
+              "schema_version": 1,
+              "expected": 409890,
+              "valid_unique": 409890,
+              "missing": 0,
+              "duplicates": 0,
+              "malformed": 0,
+              "wrong_run_id": 0,
+              "descending_transitions": 0,
+              "files": {
+                "envoy.log": {
+                  "records": 409890,
+                  "min": 1,
+                  "max": 409890
+                }
+              }
+            }
+          }
+        },
+        {
+          "strategy": "baseline",
+          "limit_mib": 56,
+          "repetition": 3,
+          "exit_code": 0,
+          "oom": false,
+          "timed_out": false,
+          "functional_passed": true,
+          "integrity_passed": true,
+          "passed": true,
+          "summary": {
+            "schema_version": 1,
+            "run_id": "baseline-56-3",
+            "strategy": "baseline",
+            "success": true,
+            "started_at": "2026-07-30T20:37:49.585263717Z",
+            "duration_ns": 25313247095,
+            "cgroup_version": "v2",
+            "cache_source": "file",
+            "rotations": 1,
+            "workload": {
+              "max_file_bytes": 209715200,
+              "rotations": 1,
+              "max_backups": 1,
+              "record_bytes": 512,
+              "bytes_per_second": 8388608,
+              "buffer_bytes": 65536,
+              "flush_interval_ns": 100000000,
+              "monitor_interval_ns": 20000000,
+              "resident_bytes": 33554432
+            },
+            "peak_memory": 58724352,
+            "peak_rss": 68505600,
+            "peak_anon": 52133888,
+            "cache": {
+              "start_bytes": 364544,
+              "end_bytes": 4354048,
+              "max_bytes": 7032832,
+              "mean_bytes": 4557716.598879104,
+              "median_bytes": 4550656,
+              "p95_bytes": 5275648,
+              "overall_rate_bytes_per_second": 159705.11496843732,
+              "positive_rate_bytes_per_second": 2844097.879019284,
+              "reclaim_rate_bytes_per_second": 7800048.736875872,
+              "rotation_transient_max_bytes": 0,
+              "rotation_interval_slopes": [
+                -23759.85553883248
+              ]
+            },
+            "writer": {
+              "generated": 410005,
+              "written": 410005,
+              "reopen_requests": 0,
+              "reopen_failures": 0
+            },
+            "writer_implementation": "logwriter-cpp",
+            "integrity": {
+              "schema_version": 1,
+              "expected": 410005,
+              "valid_unique": 410005,
+              "missing": 0,
+              "duplicates": 0,
+              "malformed": 0,
+              "wrong_run_id": 0,
+              "descending_transitions": 0,
+              "files": {
+                "envoy.log": {
+                  "records": 410005,
+                  "min": 1,
+                  "max": 410005
+                }
+              }
+            }
+          }
+        },
+        {
+          "strategy": "baseline",
+          "limit_mib": 52,
+          "repetition": 1,
+          "exit_code": 137,
+          "oom": true,
+          "timed_out": false,
+          "functional_passed": false,
+          "integrity_passed": false,
+          "passed": false,
+          "failure_kind": "oom",
+          "error": "docker attempt failed"
+        },
+        {
+          "strategy": "baseline",
+          "limit_mib": 52,
+          "repetition": 2,
+          "exit_code": 0,
+          "oom": false,
+          "timed_out": false,
+          "functional_passed": true,
+          "integrity_passed": true,
+          "passed": true,
+          "summary": {
+            "schema_version": 1,
+            "run_id": "baseline-52-2",
+            "strategy": "baseline",
+            "success": true,
+            "started_at": "2026-07-30T20:38:25.750857303Z",
+            "duration_ns": 25329332179,
+            "cgroup_version": "v2",
+            "cache_source": "file",
+            "rotations": 1,
+            "workload": {
+              "max_file_bytes": 209715200,
+              "rotations": 1,
+              "max_backups": 1,
+              "record_bytes": 512,
+              "bytes_per_second": 8388608,
+              "buffer_bytes": 65536,
+              "flush_interval_ns": 100000000,
+              "monitor_interval_ns": 20000000,
+              "resident_bytes": 33554432
+            },
+            "peak_memory": 54534144,
+            "peak_rss": 67821568,
+            "peak_anon": 51388416,
+            "cache": {
+              "start_bytes": 278528,
+              "end_bytes": 1093632,
+              "max_bytes": 4628480,
+              "mean_bytes": 1565251.5299760192,
+              "median_bytes": 1474560,
+              "p95_bytes": 2973696,
+              "overall_rate_bytes_per_second": 32603.564514152145,
+              "positive_rate_bytes_per_second": 2769737.1106188963,
+              "reclaim_rate_bytes_per_second": 8484817.422113093,
+              "rotation_transient_max_bytes": 0,
+              "rotation_interval_slopes": [
+                -74461.51921836707
+              ]
+            },
+            "writer": {
+              "generated": 410221,
+              "written": 410221,
+              "reopen_requests": 0,
+              "reopen_failures": 0
+            },
+            "writer_implementation": "logwriter-cpp",
+            "integrity": {
+              "schema_version": 1,
+              "expected": 410221,
+              "valid_unique": 410221,
+              "missing": 0,
+              "duplicates": 0,
+              "malformed": 0,
+              "wrong_run_id": 0,
+              "descending_transitions": 0,
+              "files": {
+                "envoy.log": {
+                  "records": 410221,
+                  "min": 1,
+                  "max": 410221
+                }
+              }
+            }
+          }
+        },
+        {
+          "strategy": "baseline",
+          "limit_mib": 52,
+          "repetition": 3,
+          "exit_code": 137,
+          "oom": true,
+          "timed_out": false,
+          "functional_passed": false,
+          "integrity_passed": false,
+          "passed": false,
+          "failure_kind": "oom",
+          "error": "docker attempt failed"
+        }
+      ]
+    }
+  ]
+}

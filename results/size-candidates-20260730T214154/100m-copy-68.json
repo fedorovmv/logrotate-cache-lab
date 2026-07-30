@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "reports": [
+    {
+      "schema_version": 1,
+      "strategy": "copytruncate",
+      "minimum_pass_mib": 0,
+      "greatest_fail_mib": 68,
+      "boundary_resolved": false,
+      "delta_minimum_mib": 0,
+      "delta_resolved": false,
+      "oom_failures": 3,
+      "timeout_failures": 0,
+      "functional_failures": 0,
+      "integrity_failures": 0,
+      "lower_mib": 68,
+      "upper_mib": 68,
+      "step_mib": 4,
+      "repetitions": 3,
+      "attempt_timeout_ns": 45000000000,
+      "workload": {
+        "max_file_bytes": 104857600,
+        "rotations": 1,
+        "max_backups": 1,
+        "record_bytes": 512,
+        "bytes_per_second": 8388608,
+        "buffer_bytes": 65536,
+        "flush_interval_ns": 100000000,
+        "monitor_interval_ns": 20000000,
+        "resident_bytes": 33554432
+      },
+      "attempts": [
+        {
+          "strategy": "copytruncate",
+          "limit_mib": 68,
+          "repetition": 1,
+          "exit_code": 137,
+          "oom": true,
+          "timed_out": false,
+          "functional_passed": false,
+          "integrity_passed": false,
+          "passed": false,
+          "failure_kind": "oom",
+          "error": "docker attempt failed"
+        },
+        {
+          "strategy": "copytruncate",
+          "limit_mib": 68,
+          "repetition": 2,
+          "exit_code": 137,
+          "oom": true,
+          "timed_out": false,
+          "functional_passed": false,
+          "integrity_passed": false,
+          "passed": false,
+          "failure_kind": "oom",
+          "error": "docker attempt failed"
+        },
+        {
+          "strategy": "copytruncate",
+          "limit_mib": 68,
+          "repetition": 3,
+          "exit_code": 137,
+          "oom": true,
+          "timed_out": false,
+          "functional_passed": false,
+          "integrity_passed": false,
+          "passed": false,
+          "failure_kind": "oom",
+          "error": "docker attempt failed"
+        }
+      ]
+    }
+  ]
+}
