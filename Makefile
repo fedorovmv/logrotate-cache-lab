@@ -1,4 +1,4 @@
-.PHONY: test vet build build-go build-cpp docker-build docker-smoke compare memory-sweep kind-sweep
+.PHONY: test vet build build-go build-cpp docker-build docker-smoke compare memory-sweep memory-sweep-50m kind-sweep
 
 IMAGE ?= logrotate-cache-lab:dev
 CXX ?= c++
@@ -40,6 +40,9 @@ compare:
 
 memory-sweep:
 	./scripts/memory-sweep.sh
+
+memory-sweep-50m:
+	./scripts/memory-sweep-50m.sh
 
 kind-sweep:
 	./scripts/kind-sweep.sh --quick

@@ -99,28 +99,29 @@
       <span>C++ writer</span>
       <span>tmpfs исключён</span>
       <span>3 повтора на границе</span>
+      <span>файл 50 MiB</span>
     </div>
   </header>
 
   <div class="lead">
-    <b>Вывод:</b> для протестированного workload вариант <b>rename + reopen</b> является предпочтительным. Он исключает полнофайловое копирование, прошёл на лимите <b>24 MiB</b> против <b>32 MiB</b> у copytruncate и сохранил все sequence ID. Copytruncate требует дополнительный запас памяти и имеет неустранимое окно потери записей между достижением EOF при копировании и truncate.
+    <b>Вывод:</b> на файле 50 MiB вариант <b>rename + reopen</b> прошёл при лимите <b>52 MiB</b>, а copytruncate потребовал <b>88 MiB</b>. Полнофайловое копирование добавило 36 MiB к минимальному лимиту и примерно удвоило file cache. Rename/reopen сохранил все sequence ID; copytruncate имеет неустранимое окно потери записей между достижением EOF при копировании и truncate.
   </div>
 
   <section class="grid">
     <div class="card">
       <h3>Минимум: copytruncate</h3>
-      <div class="metric bad">32 <small>MiB</small></div>
-      <p class="muted">28 MiB не прошло 3/3 повторов</p>
+      <div class="metric bad">88 <small>MiB</small></div>
+      <p class="muted">84 MiB не прошло 3/3 повторов</p>
     </div>
     <div class="card">
       <h3>Минимум: rename + reopen</h3>
-      <div class="metric good">24 <small>MiB</small></div>
-      <p class="muted">20 MiB не прошло 3/3 повторов</p>
+      <div class="metric good">52 <small>MiB</small></div>
+      <p class="muted">Совпало с baseline</p>
     </div>
     <div class="card">
       <h3>Разница стратегий</h3>
-      <div class="metric good">−8 <small>MiB</small></div>
-      <p class="muted">25% ниже относительно copytruncate</p>
+      <div class="metric good">−36 <small>MiB</small></div>
+      <p class="muted">41% ниже относительно copytruncate</p>
     </div>
   </section>
 
@@ -133,37 +134,37 @@
         <linearGradient id="base" x1="0" x2="1"><stop stop-color="#9ab8ff"/><stop offset="1" stop-color="#246bfd"/></linearGradient>
       </defs>
       <g font-family="Inter,system-ui,sans-serif" font-size="13" fill="#667085">
-        <text x="190" y="245">0</text><text x="330" y="245">8</text><text x="470" y="245">16</text><text x="610" y="245">24</text><text x="750" y="245">32 MiB</text>
+        <text x="190" y="245">0</text><text x="330" y="245">25</text><text x="470" y="245">50</text><text x="610" y="245">75</text><text x="750" y="245">100 MiB</text>
         <g stroke="#d9e1ec"><line x1="200" y1="25" x2="200" y2="225"/><line x1="340" y1="25" x2="340" y2="225"/><line x1="480" y1="25" x2="480" y2="225"/><line x1="620" y1="25" x2="620" y2="225"/><line x1="760" y1="25" x2="760" y2="225"/></g>
       </g>
       <g font-family="Inter,system-ui,sans-serif" font-weight="700" fill="#172033">
-        <text x="20" y="66">Baseline</text><rect x="200" y="40" width="490" height="38" rx="9" fill="url(#base)"/><text x="705" y="65">28 MiB</text>
-        <text x="20" y="137">copytruncate</text><rect x="200" y="111" width="560" height="38" rx="9" fill="url(#copy)"/><text x="775" y="136">32 MiB</text>
-        <text x="20" y="208">rename + reopen</text><rect x="200" y="182" width="420" height="38" rx="9" fill="url(#rename)"/><text x="635" y="207">24 MiB</text>
+        <text x="20" y="66">Baseline</text><rect x="200" y="40" width="291" height="38" rx="9" fill="url(#base)"/><text x="505" y="65">52 MiB</text>
+        <text x="20" y="137">copytruncate</text><rect x="200" y="111" width="493" height="38" rx="9" fill="url(#copy)"/><text x="707" y="136">88 MiB</text>
+        <text x="20" y="208">rename + reopen</text><rect x="200" y="182" width="291" height="38" rx="9" fill="url(#rename)"/><text x="505" y="207">52 MiB</text>
       </g>
     </svg>
   </div>
-  <p class="muted">Метод: бинарный поиск 16–64 MiB, шаг 4 MiB, кандидат принимается только при трёх успешных повторах. Swap ограничен тем же значением, что и memory limit.</p>
+  <p class="muted">Метод: файл 50 MiB, бинарный поиск 32–192 MiB, шаг 4 MiB; кандидат принимается только при трёх успешных повторах. Swap ограничен тем же значением, что и memory limit.</p>
 
   <table>
     <thead><tr><th>Стратегия</th><th>Наибольший fail</th><th>Минимальный pass</th><th>К baseline</th><th>Попыток</th><th>Целостность</th></tr></thead>
     <tbody>
-      <tr><td>Baseline, без ротации</td><td>24 MiB (2/3 pass)</td><td><b>28 MiB</b></td><td>—</td><td>18</td><td><span class="badge good">clean</span></td></tr>
-      <tr><td>copytruncate</td><td>28 MiB (0/3 pass)</td><td><b>32 MiB</b></td><td class="bad">+4 MiB</td><td>15</td><td><span class="badge bad">loss observed</span></td></tr>
-      <tr><td>rename + reopen</td><td>20 MiB (0/3 pass)</td><td><b>24 MiB</b></td><td class="good">−4 MiB</td><td>18</td><td><span class="badge good">clean</span></td></tr>
+      <tr><td>Baseline, без ротации</td><td>48 MiB</td><td><b>52 MiB</b></td><td>—</td><td>24</td><td><span class="badge good">clean</span></td></tr>
+      <tr><td>copytruncate</td><td>84 MiB</td><td><b>88 MiB</b></td><td class="bad">+36 MiB</td><td>24</td><td><span class="badge bad">loss observed</span></td></tr>
+      <tr><td>rename + reopen</td><td>48 MiB</td><td><b>52 MiB</b></td><td class="good">0 MiB</td><td>24</td><td><span class="badge good">clean</span></td></tr>
     </tbody>
   </table>
 
   <div class="callout" style="margin-top:16px">
-    <b>Почему rename ниже baseline?</b> Baseline — контрольный workload с тем же объёмом обычной записи в один растущий inode, а не теоретическая нижняя граница. Rename меняет жизненный цикл inode и условия reclaim; кроме того, граница дискретна и чувствительна к планированию/writeback. Корректная прямая величина для выбора алгоритма здесь — <b>32 против 24 MiB</b>. Отрицательная delta не означает «отрицательное потребление памяти».
+    <b>Масштабирование подтвердилось.</b> На коротком файле 4 MiB разница минимальных лимитов была 8 MiB в одиночном smoke и 8 MiB в прямом трёхкратном сравнении. На 50 MiB copytruncate потребовал уже на <b>36 MiB</b> больше rename/reopen. Rename остался на уровне baseline, поскольку не создаёт вторую копию содержимого файла.
   </div>
 
   <h2>Целостность логов</h2>
   <section class="grid two">
     <div class="card">
-      <h3>Финальный Docker comparison</h3>
-      <div class="metric bad">380 <small>потерянных записей</small></div>
-      <p>Copytruncate, две ротации по 4 MiB. Дубликатов и malformed-записей не обнаружено.</p>
+      <h3>Copytruncate, 50 MiB</h3>
+      <div class="metric bad">384–2136 <small>потерь</small></div>
+      <p>Диапазон missing sequence ID в трёх успешных попытках на минимальном лимите 88 MiB.</p>
     </div>
     <div class="card">
       <h3>Rename + reopen</h3>
@@ -171,35 +172,34 @@
       <p>Нет missing, duplicate или malformed sequence ID. Reopen завершился успешно.</p>
     </div>
   </section>
-  <p>Потеря у copytruncate не обязана происходить в каждом коротком запуске. Она возникает, когда writer сбрасывает buffered block после того, как копирование дошло до EOF, но до truncate. <code>fsync</code> backup-файла делает уже скопированные данные устойчивыми, однако не закрывает это окно.</p>
+  <p>Потеря у copytruncate возникает, когда writer сбрасывает buffered block после того, как копирование дошло до EOF, но до truncate. <code>fsync</code> backup-файла делает уже скопированные данные устойчивыми, однако не закрывает это окно. Точное число зависит от scheduling и момента flush, но на 50 MiB проблема воспроизвелась во всех трёх минимальных успешных попытках.</p>
 
   <h2>File cache и скорость заполнения</h2>
   <table>
     <thead><tr><th>Стратегия</th><th>Cache fill</th><th>Peak cache</th><th>Peak memory</th><th>Peak anon</th><th>Missing</th></tr></thead>
     <tbody>
-      <tr><td>copytruncate</td><td>7.89 MiB/s</td><td>8.09 MiB</td><td>29.72 MiB</td><td>19.29 MiB</td><td class="bad"><b>380</b></td></tr>
-      <tr><td>rename + reopen</td><td>7.91 MiB/s</td><td>8.22 MiB</td><td>32.85 MiB</td><td>21.34 MiB</td><td class="good"><b>0</b></td></tr>
+      <tr><td>Baseline</td><td>7.96 MiB/s</td><td>49.48 MiB</td><td>100.75 MiB</td><td>47.47 MiB</td><td class="good"><b>0</b></td></tr>
+      <tr><td>copytruncate</td><td class="bad"><b>16.04 MiB/s</b></td><td class="bad"><b>100.44 MiB</b></td><td>153.49 MiB</td><td>47.42 MiB</td><td class="bad"><b>373–618</b></td></tr>
+      <tr><td>rename + reopen</td><td>8.00 MiB/s</td><td>49.77 MiB</td><td>100.82 MiB</td><td>47.44 MiB</td><td class="good"><b>0</b></td></tr>
     </tbody>
   </table>
 
+  <p class="muted">Средние значения трёх повторов при общем лимите 192 MiB. Один и тот же anon working set позволяет увидеть именно file-cache overhead стратегии.</p>
+
   <div class="card figure" style="margin-top:16px">
-    <svg viewBox="0 0 900 340" role="img" aria-label="File cache во времени для короткого сравнения">
+    <svg viewBox="0 0 900 340" role="img" aria-label="Peak file cache для файла 50 MiB">
       <g stroke="#d9e1ec" stroke-width="1">
-        <line x1="80" y1="285" x2="840" y2="285"/><line x1="80" y1="225" x2="840" y2="225"/><line x1="80" y1="165" x2="840" y2="165"/><line x1="80" y1="105" x2="840" y2="105"/><line x1="80" y1="45" x2="840" y2="45"/>
+        <line x1="100" y1="285" x2="840" y2="285"/><line x1="100" y1="225" x2="840" y2="225"/><line x1="100" y1="165" x2="840" y2="165"/><line x1="100" y1="105" x2="840" y2="105"/><line x1="100" y1="45" x2="840" y2="45"/>
       </g>
       <g font-family="Inter,system-ui,sans-serif" font-size="12" fill="#667085">
-        <text x="48" y="289">0</text><text x="48" y="229">2</text><text x="48" y="169">4</text><text x="48" y="109">6</text><text x="48" y="49">8 MiB</text>
-        <text x="78" y="315">0.13 s</text><text x="430" y="315">0.63 s</text><text x="790" y="315">1.03 s</text>
+        <text x="62" y="289">0</text><text x="54" y="229">25</text><text x="54" y="169">50</text><text x="54" y="109">75</text><text x="45" y="49">100 MiB</text>
       </g>
-      <polyline fill="none" stroke="#f28c28" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="80,255 164,231 249,231 333,183 418,159 502,140 587,114 671,90 756,81 840,42"/>
-      <polyline fill="none" stroke="#138a5b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="80,252 164,252 249,208 333,185 418,159 502,136 587,110 671,85 756,62 840,38"/>
-      <g font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">
-        <rect x="610" y="8" width="18" height="5" fill="#f28c28"/><text x="636" y="16" fill="#172033">copytruncate</text>
-        <rect x="735" y="8" width="18" height="5" fill="#138a5b"/><text x="761" y="16" fill="#172033">rename</text>
-      </g>
+      <rect x="170" y="166" width="150" height="119" rx="10" fill="#246bfd"/><text x="210" y="155" font-family="Inter,system-ui,sans-serif" font-weight="700">49.48 MiB</text><text x="190" y="315" font-family="Inter,system-ui,sans-serif">Baseline</text>
+      <rect x="380" y="44" width="150" height="241" rx="10" fill="#f28c28"/><text x="415" y="33" font-family="Inter,system-ui,sans-serif" font-weight="700">100.44 MiB</text><text x="402" y="315" font-family="Inter,system-ui,sans-serif">copytruncate</text>
+      <rect x="590" y="166" width="150" height="119" rx="10" fill="#138a5b"/><text x="630" y="155" font-family="Inter,system-ui,sans-serif" font-weight="700">49.77 MiB</text><text x="602" y="315" font-family="Inter,system-ui,sans-serif">rename + reopen</text>
     </svg>
   </div>
-  <p class="muted">На коротком 4 MiB workload headline cache-fill почти одинаков: его задаёт основной поток записи 8 MiB/s. Копирование — короткий transient, который монитор с интервалом 100 ms может не поймать целиком. Поэтому для memory headroom более показателен повторный OOM boundary test. На production-размере 32–100 MiB следует повторить тест с интервалом 20–50 ms.</p>
+  <p class="muted">При 50 MiB copytruncate одновременно удерживает страницы исходного и backup inode: peak file cache и скорость его заполнения приблизительно удваиваются. Rename/reopen остаётся на уровне обычной записи без копирования.</p>
 
   <h2>Влияние реализации writer</h2>
   <p>Первый вариант использовал Go writer, и его GC/runtime заметно влиял на минимальный лимит. Docker/kind writer был переписан на C++17: фиксированный record buffer, предварительно зарезервированный flush buffer, отсутствие сборщика мусора.</p>
@@ -220,11 +220,11 @@
     <div class="card">
       <h3>Memory boundary</h3>
       <ul>
-        <li>Файл: 4 MiB, одна ротация</li>
+        <li>Файл: 50 MiB, одна ротация</li>
         <li>Поток: 8 MiB/s, record 512 B</li>
         <li>Buffer: 64 KiB, flush 100 ms</li>
-        <li>Resident allocation: 8 MiB</li>
-        <li>Диапазон: 16–64 MiB, шаг 4 MiB</li>
+        <li>Resident allocation: 32 MiB</li>
+        <li>Диапазон: 32–192 MiB, шаг 4 MiB</li>
         <li>Три повтора каждого кандидата</li>
         <li><code>--memory-swap == --memory</code></li>
       </ul>
@@ -246,7 +246,7 @@
   <ol>
     <li><b>Это сравнительный стенд, не sizing настоящего Envoy.</b> C++ writer не воспроизводит allocator, worker threads и полную access-log реализацию Envoy.</li>
     <li>Числа получены внутри Linux VM Docker Desktop. Production kernel, filesystem, cgroup и storage class могут изменить reclaim/writeback.</li>
-    <li>Файл 4 MiB выбран для быстрого устойчивого теста. При 32–100 MiB стоимость copytruncate должна измеряться повторно.</li>
+    <li>Основной результат получен для одной ротации файла 50 MiB. Несколько одновременно удерживаемых backup-файлов и другой writeback rate могут изменить абсолютную границу.</li>
     <li>Baseline содержит обычную запись того же объёма и служит reference, но не является строгой нижней границей.</li>
     <li>Потеря copytruncate зависит от scheduling и flush timing; отсутствие потери в одном запуске не доказывает безопасность алгоритма.</li>
   </ol>
@@ -261,11 +261,12 @@
 ./scripts/memory-sweep.sh --quick
 ./scripts/kind-sweep.sh --quick
 
-# Полный sweep: 3 повтора, шаг 4 MiB, файлы 32 MiB
-./scripts/memory-sweep.sh</pre>
+# Профиль 50 MiB: 3 повтора, шаг 4 MiB
+./scripts/memory-sweep-50m.sh</pre>
 
   <h2>Исходные данные</h2>
   <ul>
+    <li><a href="../results/memory-sweep-50m.json">Основной memory sweep 50 MiB, JSON</a></li>
     <li><a href="../results/memory-sweep-repeated-4m.json">Трёхкратный memory sweep, JSON</a></li>
     <li><a href="../results/compare-20260730T190350/comparison.json">Финальное сравнение стратегий, JSON</a></li>
     <li><a href="../README.md">README стенда и описание полей</a></li>

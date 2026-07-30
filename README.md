@@ -58,6 +58,7 @@ make docker-smoke
 ./scripts/compare.sh
 ./scripts/memory-sweep.sh --quick
 ./scripts/memory-sweep.sh
+./scripts/memory-sweep-50m.sh
 ./scripts/kind-sweep.sh --quick
 ```
 
@@ -65,6 +66,11 @@ The non-quick Docker sweep defaults to 16–512 MiB, a 4 MiB grid, three
 repetitions per candidate, four 32 MiB rotations, 8 MiB/s log traffic, and a
 32 MiB touched resident allocation. It can take a long time. The quick mode is
 a pipeline check and is not intended to establish a stable production limit.
+
+`memory-sweep-50m.sh` is the larger-file profile: one 50 MiB rotation,
+8 MiB/s writer rate, 32 MiB resident allocation, a 4 MiB search grid, and
+three required repetitions. Its `--quick` mode uses one repetition and a
+16 MiB grid only as a pipeline check.
 
 Generated reports are written below `results/`. The scripts remove only the
 containers, named volumes, temporary manifests, and kind cluster that they
