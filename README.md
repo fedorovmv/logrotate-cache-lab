@@ -143,8 +143,10 @@ Every report includes `schema_version`. A run result directory contains:
 The main cache fields in `summary.json` are:
 
 - `overall_rate_bytes_per_second`: endpoint cache change divided by duration;
-- `positive_rate_bytes_per_second`: mean of positive sample-to-sample fill
-  rates, useful for the rising edges of a sawtooth;
+- `positive_rate_bytes_per_second`: accumulated positive cache deltas divided
+  by time spent in positive sample-to-sample intervals. It includes short copy
+  spikes and must not be interpreted as the slope between rotations or as the
+  whole-run average;
 - `reclaim_rate_bytes_per_second`: mean magnitude of falling edges;
 - `max_bytes` and `p95_bytes`: peak and nearest-rank p95 cache charge;
 - `rotation_transient_max_bytes`: maximum cache observed during completed
