@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500" viewBox="0 0 1000 500">
 <rect width="100%" height="100%" rx="18" fill="#ffffff"/>
-<text x="75" y="27" font-family="Inter,system-ui,sans-serif" font-size="18" font-weight="700" fill="#172033">File cache: 5 ротаций × 50 MiB, max-backups=5</text>
+<text x="75" y="27" font-family="Inter,system-ui,sans-serif" font-size="18" font-weight="700" fill="#172033">Файловый кеш: 5 ротаций × 50 MiB, 5 резервных файлов</text>
 <line x1="75" y1="435.0" x2="970" y2="435.0" stroke="#d9e1ec"/>
 <text x="63" y="439.0" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#667085">0 MiB</text>
 <line x1="75" y1="379.3" x2="970" y2="379.3" stroke="#d9e1ec"/>
