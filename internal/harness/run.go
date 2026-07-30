@@ -24,21 +24,22 @@ import (
 )
 
 type Config struct {
-	Executable      string
-	RunID           string
-	Strategy        rotator.Strategy
-	LogDir          string
-	ResultDir       string
-	MaxFileBytes    int64
-	Rotations       int
-	MaxBackups      int
-	RecordBytes     int
-	BytesPerSecond  int64
-	BufferBytes     int
-	FlushInterval   time.Duration
-	MonitorInterval time.Duration
-	ResidentBytes   int64
-	EnableMonitor   bool
+	Executable       string
+	WriterExecutable string
+	RunID            string
+	Strategy         rotator.Strategy
+	LogDir           string
+	ResultDir        string
+	MaxFileBytes     int64
+	Rotations        int
+	MaxBackups       int
+	RecordBytes      int
+	BytesPerSecond   int64
+	BufferBytes      int
+	FlushInterval    time.Duration
+	MonitorInterval  time.Duration
+	ResidentBytes    int64
+	EnableMonitor    bool
 }
 
 func Run(ctx context.Context, cfg Config) (report.RunSummary, error) {
@@ -64,11 +65,12 @@ func Run(ctx context.Context, cfg Config) (report.RunSummary, error) {
 		return report.RunSummary{}, err
 	}
 
-	writerArgs := []string{"writer", "--run-id", cfg.RunID, "--path", active, "--listen", listen,
+	writerArgs := []string{"--run-id", cfg.RunID, "--path", active, "--listen", listen,
 		"--state", statePath, "--record-bytes", strconv.Itoa(cfg.RecordBytes), "--buffer-bytes", strconv.Itoa(cfg.BufferBytes),
 		"--bytes-per-second", strconv.FormatInt(cfg.BytesPerSecond, 10), "--flush-interval", cfg.FlushInterval.String(),
 		"--resident-bytes", strconv.FormatInt(cfg.ResidentBytes, 10)}
-	writerCmd, writerLog, err := startChild(cfg.Executable, filepath.Join(cfg.ResultDir, "writer.log"), writerArgs...)
+	writerExecutable, writerArgs := writerInvocation(cfg.Executable, cfg.WriterExecutable, writerArgs)
+	writerCmd, writerLog, err := startChild(writerExecutable, filepath.Join(cfg.ResultDir, "writer.log"), writerArgs...)
 	if err != nil {
 		return report.RunSummary{}, err
 	}
@@ -164,14 +166,12 @@ func Run(ctx context.Context, cfg Config) (report.RunSummary, error) {
 			ResidentBytes: cfg.ResidentBytes,
 		},
 	}
-	for _, sample := range samples {
-		if sample.MemoryCurrent > summary.PeakMemory {
-			summary.PeakMemory = sample.MemoryCurrent
-		}
-		if sample.RSS > summary.PeakRSS {
-			summary.PeakRSS = sample.RSS
-		}
+	if cfg.WriterExecutable == "" {
+		summary.WriterImplementation = "go"
+	} else {
+		summary.WriterImplementation = filepath.Base(cfg.WriterExecutable)
 	}
+	updatePeaks(&summary, samples)
 	if reader, discoverErr := cgroup.Discover(); discoverErr == nil {
 		if memory, sampleErr := reader.Sample(); sampleErr == nil {
 			summary.CgroupVersion = string(memory.Version)
@@ -179,7 +179,7 @@ func Run(ctx context.Context, cfg Config) (report.RunSummary, error) {
 		}
 	}
 	summary.Success = writerState.ReopenFailures == 0
-	if cfg.Strategy == rotator.RenameReopen {
+	if cfg.Strategy == rotator.RenameReopen || cfg.Strategy == rotator.Baseline {
 		summary.Success = summary.Success && integrityReport.Missing == 0 && integrityReport.Duplicates == 0 && integrityReport.Malformed == 0
 	}
 	if !summary.Success {
@@ -189,6 +189,27 @@ func Run(ctx context.Context, cfg Config) (report.RunSummary, error) {
 		return summary, err
 	}
 	return summary, nil
+}
+
+func writerInvocation(loglabExecutable, writerExecutable string, args []string) (string, []string) {
+	if writerExecutable != "" {
+		return writerExecutable, args
+	}
+	return loglabExecutable, append([]string{"writer"}, args...)
+}
+
+func updatePeaks(summary *report.RunSummary, samples []report.Sample) {
+	for _, sample := range samples {
+		if sample.MemoryCurrent > summary.PeakMemory {
+			summary.PeakMemory = sample.MemoryCurrent
+		}
+		if sample.RSS > summary.PeakRSS {
+			summary.PeakRSS = sample.RSS
+		}
+		if sample.Anon != nil && *sample.Anon > summary.PeakAnon {
+			summary.PeakAnon = *sample.Anon
+		}
+	}
 }
 
 func freeLoopbackAddress() (string, error) {

@@ -90,6 +90,7 @@ func Search(ctx context.Context, cfg Config, run AttemptRunner) (report.SweepRep
 	}
 	result.MinimumPassMiB = pass
 	result.GreatestFailMiB = fail
+	result.BoundaryResolved = true
 	return result, nil
 }
 

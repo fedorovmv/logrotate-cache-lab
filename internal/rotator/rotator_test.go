@@ -111,3 +111,28 @@ func TestRetentionKeepsNewestBackups(t *testing.T) {
 		}
 	}
 }
+
+func TestBaselineWaitsForLogicalBytesWithoutChangingFile(t *testing.T) {
+	dir := t.TempDir()
+	active := filepath.Join(dir, "active.log")
+	events := filepath.Join(dir, "events.csv")
+	if err := os.WriteFile(active, make([]byte, 128), 0o640); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := os.Stat(active)
+	cfg := Config{Strategy: Baseline, ActivePath: active, EventPath: events, MaxFileBytes: 64, Rotations: 2}
+	if err := Run(context.Background(), cfg); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := os.Stat(active)
+	if !os.SameFile(before, after) || after.Size() != 128 {
+		t.Fatalf("baseline changed active file")
+	}
+	logged, err := ReadEvents(events)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"threshold", "baseline-complete"}; !reflect.DeepEqual(phases(logged), want) {
+		t.Fatalf("phases=%v want=%v", phases(logged), want)
+	}
+}

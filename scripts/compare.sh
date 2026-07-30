@@ -40,6 +40,7 @@ for strategy in copytruncate rename-reopen; do
   docker volume create "$volume" >/dev/null
   result_dir="$run_root/$strategy"
   mkdir -p "$result_dir"
+  chmod 0777 "$result_dir"
   docker run --rm \
     --mount "source=$volume,target=/var/log/loglab" \
     --mount "type=bind,source=$result_dir,target=/results" \

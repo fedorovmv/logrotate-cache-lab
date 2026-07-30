@@ -17,6 +17,7 @@ import (
 type Strategy string
 
 const (
+	Baseline     Strategy = "baseline"
 	CopyTruncate Strategy = "copytruncate"
 	RenameReopen Strategy = "rename-reopen"
 )
@@ -41,6 +42,35 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 	if cfg.PollInterval <= 0 {
 		cfg.PollInterval = 20 * time.Millisecond
+	}
+	if cfg.Strategy == Baseline {
+		target := cfg.MaxFileBytes * int64(cfg.Rotations)
+		if target/int64(cfg.Rotations) != cfg.MaxFileBytes {
+			return fmt.Errorf("baseline target overflows")
+		}
+		ticker := time.NewTicker(cfg.PollInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-ticker.C:
+				info, err := os.Stat(cfg.ActivePath)
+				if err != nil {
+					if os.IsNotExist(err) {
+						continue
+					}
+					return err
+				}
+				if info.Size() < target {
+					continue
+				}
+				if err := appendEvent(cfg, Event{Ordinal: 1, Phase: "threshold", Bytes: info.Size()}); err != nil {
+					return err
+				}
+				return appendEvent(cfg, Event{Ordinal: 1, Phase: "baseline-complete", Bytes: info.Size()})
+			}
+		}
 	}
 	ticker := time.NewTicker(cfg.PollInterval)
 	defer ticker.Stop()

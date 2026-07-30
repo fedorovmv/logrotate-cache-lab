@@ -7,8 +7,32 @@ import (
 	"testing"
 	"time"
 
+	"logrotate-cache-lab/internal/report"
 	"logrotate-cache-lab/internal/rotator"
 )
+
+func TestWriterInvocationUsesCppOverrideWithoutGoSubcommand(t *testing.T) {
+	executable, args := writerInvocation("/usr/local/bin/loglab", "/usr/local/bin/logwriter-cpp", []string{"--run-id", "x"})
+	if executable != "/usr/local/bin/logwriter-cpp" || len(args) != 2 || args[0] != "--run-id" {
+		t.Fatalf("executable=%q args=%v", executable, args)
+	}
+	executable, args = writerInvocation("/usr/local/bin/loglab", "", []string{"--run-id", "x"})
+	if executable != "/usr/local/bin/loglab" || len(args) != 3 || args[0] != "writer" {
+		t.Fatalf("fallback executable=%q args=%v", executable, args)
+	}
+}
+
+func TestUpdatePeaksSeparatesAnonFromMemoryAndRSS(t *testing.T) {
+	anon1, anon2 := uint64(10), uint64(30)
+	summary := report.RunSummary{}
+	updatePeaks(&summary, []report.Sample{
+		{MemoryCurrent: 100, RSS: 40, Anon: &anon1},
+		{MemoryCurrent: 80, RSS: 50, Anon: &anon2},
+	})
+	if summary.PeakMemory != 100 || summary.PeakRSS != 50 || summary.PeakAnon != 30 {
+		t.Fatalf("summary=%+v", summary)
+	}
+}
 
 func TestRunRenameSubprocessesPreservesIntegrity(t *testing.T) {
 	executable := filepath.Join(t.TempDir(), "loglab")
@@ -40,5 +64,8 @@ func TestRunRenameSubprocessesPreservesIntegrity(t *testing.T) {
 	}
 	if summary.Workload.MaxFileBytes != 64*1024 || summary.Workload.Rotations != 2 || summary.Workload.RecordBytes != 256 {
 		t.Fatalf("workload=%+v", summary.Workload)
+	}
+	if summary.WriterImplementation != "go" {
+		t.Fatalf("writer implementation=%q", summary.WriterImplementation)
 	}
 }

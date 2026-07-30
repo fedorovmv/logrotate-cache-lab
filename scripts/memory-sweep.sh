@@ -20,9 +20,9 @@ args=(
 )
 if $quick; then
   args+=(
-    --lower-mib 32
-    --upper-mib 192
-    --step-mib 16
+    --lower-mib 16
+    --upper-mib 128
+    --step-mib 8
     --repetitions 1
     --max-file-bytes $((4 * 1024 * 1024))
     --rotations 1

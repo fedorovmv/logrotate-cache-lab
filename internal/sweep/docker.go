@@ -48,8 +48,14 @@ func dockerWorkload(cfg DockerConfig) report.WorkloadConfig {
 }
 
 func dockerAttempt(ctx context.Context, cfg DockerConfig, strategy rotator.Strategy, attempt report.SweepAttempt) report.SweepAttempt {
-	runDir := filepath.Join(cfg.ResultRoot, fmt.Sprintf("%s-%dm-r%d-%d", strategy, attempt.LimitMiB, attempt.Repetition, time.Now().UnixNano()))
-	if err := os.MkdirAll(runDir, 0o755); err != nil {
+	resultRoot, resolveErr := absoluteResultRoot(cfg.ResultRoot)
+	if resolveErr != nil {
+		attempt.Error = fmt.Sprintf("resolve result root: %v", resolveErr)
+		attempt.FailureKind = "functional"
+		return attempt
+	}
+	runDir := filepath.Join(resultRoot, fmt.Sprintf("%s-%dm-r%d-%d", strategy, attempt.LimitMiB, attempt.Repetition, time.Now().UnixNano()))
+	if err := prepareResultDir(runDir); err != nil {
 		attempt.Error = err.Error()
 		return attempt
 	}
@@ -128,6 +134,17 @@ waitLoop:
 		return attempt
 	}
 	return classifySummary(strategy, attempt, summary)
+}
+
+func absoluteResultRoot(path string) (string, error) {
+	return filepath.Abs(path)
+}
+
+func prepareResultDir(path string) error {
+	if err := os.MkdirAll(path, 0o777); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o777)
 }
 
 func classifyProcessFailure(attempt report.SweepAttempt, exitCode int, timedOut, oomKilled bool, output string) report.SweepAttempt {

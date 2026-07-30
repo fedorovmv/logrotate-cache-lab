@@ -51,8 +51,8 @@ func memorySweepCommand(args []string) error {
 	fs.StringVar(&cfg.Image, "image", "logrotate-cache-lab:dev", "Docker image")
 	fs.StringVar(&cfg.ResultRoot, "result-root", "results/sweep-attempts", "attempt result root")
 	fs.StringVar(&output, "output", "results/memory-sweep.json", "combined report path")
-	fs.StringVar(&strategy, "strategy", "both", "copytruncate, rename-reopen, or both")
-	fs.IntVar(&cfg.LowerMiB, "lower-mib", 64, "lower memory bound")
+	fs.StringVar(&strategy, "strategy", "both", "baseline, copytruncate, rename-reopen, or both")
+	fs.IntVar(&cfg.LowerMiB, "lower-mib", 16, "lower memory bound")
 	fs.IntVar(&cfg.UpperMiB, "upper-mib", 512, "upper memory bound")
 	fs.IntVar(&cfg.StepMiB, "step-mib", 4, "search resolution")
 	fs.IntVar(&cfg.Repetitions, "repetitions", 3, "successful repetitions required")
@@ -76,8 +76,8 @@ func memorySweepCommand(args []string) error {
 	var strategies []rotator.Strategy
 	switch strategy {
 	case "both":
-		strategies = []rotator.Strategy{rotator.CopyTruncate, rotator.RenameReopen}
-	case string(rotator.CopyTruncate), string(rotator.RenameReopen):
+		strategies = []rotator.Strategy{rotator.Baseline, rotator.CopyTruncate, rotator.RenameReopen}
+	case string(rotator.Baseline), string(rotator.CopyTruncate), string(rotator.RenameReopen):
 		strategies = []rotator.Strategy{rotator.Strategy(strategy)}
 	default:
 		return fmt.Errorf("unknown strategy %q", strategy)
@@ -93,7 +93,29 @@ func memorySweepCommand(args []string) error {
 			_ = report.WriteJSONAtomic(output, combined)
 			return err
 		}
-		fmt.Printf("%-14s minimum=%dMiB greatest-fail=%dMiB attempts=%d\n", selected, result.MinimumPassMiB, result.GreatestFailMiB, len(result.Attempts))
+		relation := "="
+		if !result.BoundaryResolved {
+			relation = "<="
+		}
+		fmt.Printf("%-14s minimum%s%dMiB greatest-fail=%dMiB attempts=%d\n", selected, relation, result.MinimumPassMiB, result.GreatestFailMiB, len(result.Attempts))
+	}
+	for _, result := range combined.Reports {
+		if result.Strategy == string(rotator.Baseline) {
+			for i := range combined.Reports {
+				if combined.Reports[i].Strategy == string(rotator.Baseline) {
+					continue
+				}
+				combined.Reports[i].BaselineMinimumMiB = result.MinimumPassMiB
+				if result.BoundaryResolved && combined.Reports[i].BoundaryResolved {
+					combined.Reports[i].DeltaMinimumMiB = combined.Reports[i].MinimumPassMiB - result.MinimumPassMiB
+					combined.Reports[i].DeltaResolved = true
+					fmt.Printf("%-14s baseline=%dMiB delta=%+dMiB\n", combined.Reports[i].Strategy, result.MinimumPassMiB, combined.Reports[i].DeltaMinimumMiB)
+				} else {
+					fmt.Printf("%-14s baseline/delta unresolved: lower bound passed\n", combined.Reports[i].Strategy)
+				}
+			}
+			break
+		}
 	}
 	if err := report.WriteJSONAtomic(output, combined); err != nil {
 		return err
@@ -132,7 +154,7 @@ func rotateCommand(args []string) error {
 	var cfg rotator.Config
 	var strategy string
 	var startUnixNano int64
-	fs.StringVar(&strategy, "strategy", "", "copytruncate or rename-reopen")
+	fs.StringVar(&strategy, "strategy", "", "baseline, copytruncate, or rename-reopen")
 	fs.StringVar(&cfg.ActivePath, "active", "", "active log path")
 	fs.StringVar(&cfg.ReopenURL, "reopen-url", "", "writer base URL")
 	fs.StringVar(&cfg.EventPath, "events", "", "rotation event CSV")
@@ -179,9 +201,10 @@ func runCommand(args []string) error {
 	var cfg harness.Config
 	var strategy string
 	fs.StringVar(&cfg.RunID, "run-id", "run-"+strconv.FormatInt(time.Now().UnixNano(), 10), "run identifier")
-	fs.StringVar(&strategy, "strategy", "copytruncate", "rotation strategy")
+	fs.StringVar(&strategy, "strategy", "copytruncate", "baseline, copytruncate, or rename-reopen")
 	fs.StringVar(&cfg.LogDir, "log-dir", "/var/log/loglab", "disk-backed log directory")
 	fs.StringVar(&cfg.ResultDir, "result-dir", "/results", "result directory")
+	fs.StringVar(&cfg.WriterExecutable, "writer-executable", os.Getenv("LOGLAB_WRITER_EXECUTABLE"), "external writer executable; empty uses Go writer subcommand")
 	fs.Int64Var(&cfg.MaxFileBytes, "max-file-bytes", 32*1024*1024, "rotation threshold")
 	fs.IntVar(&cfg.Rotations, "rotations", 4, "number of rotations")
 	fs.IntVar(&cfg.MaxBackups, "max-backups", 0, "retained backups")

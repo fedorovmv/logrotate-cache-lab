@@ -1,12 +1,38 @@
 package sweep
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"logrotate-cache-lab/internal/report"
 	"logrotate-cache-lab/internal/rotator"
 )
+
+func TestPrepareResultDirIsWritableByNonRootContainer(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "attempt")
+	if err := prepareResultDir(path); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o777 {
+		t.Fatalf("mode=%o", info.Mode().Perm())
+	}
+}
+
+func TestAbsoluteResultRootNormalizesRelativeDockerBindSource(t *testing.T) {
+	got, err := absoluteResultRoot(filepath.Join("results", "attempts"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !filepath.IsAbs(got) {
+		t.Fatalf("path is not absolute: %q", got)
+	}
+}
 
 func TestDockerWorkloadReportContainsSizingInputs(t *testing.T) {
 	got := dockerWorkload(DockerConfig{
@@ -37,6 +63,11 @@ func TestClassifySummarySeparatesFunctionalAndIntegrityAcceptance(t *testing.T) 
 	renameAttempt := classifySummary(rotator.RenameReopen, report.SweepAttempt{}, summary)
 	if !renameAttempt.FunctionalPassed || renameAttempt.IntegrityPassed || renameAttempt.Passed {
 		t.Fatalf("rename-reopen classification=%+v", renameAttempt)
+	}
+
+	baselineAttempt := classifySummary(rotator.Baseline, report.SweepAttempt{}, summary)
+	if baselineAttempt.Passed || baselineAttempt.FailureKind != "integrity" {
+		t.Fatalf("baseline classification=%+v", baselineAttempt)
 	}
 }
 

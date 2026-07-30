@@ -21,6 +21,9 @@ func TestSearchFindsAlignedBoundaryWithThreePasses(t *testing.T) {
 	if got.MinimumPassMiB != 92 || got.GreatestFailMiB != 88 {
 		t.Fatalf("got=%+v", got)
 	}
+	if !got.BoundaryResolved {
+		t.Fatalf("expected resolved boundary: %+v", got)
+	}
 	for limit, count := range counts {
 		if count != 3 {
 			t.Fatalf("limit %d repetitions=%d", limit, count)
@@ -28,6 +31,20 @@ func TestSearchFindsAlignedBoundaryWithThreePasses(t *testing.T) {
 		if limit%4 != 0 {
 			t.Fatalf("unaligned limit %d", limit)
 		}
+	}
+}
+
+func TestSearchMarksPassingLowerBoundAsUnresolved(t *testing.T) {
+	runner := func(_ context.Context, attempt report.SweepAttempt) report.SweepAttempt {
+		attempt.Passed = true
+		return attempt
+	}
+	got, err := Search(context.Background(), Config{LowerMiB: 32, UpperMiB: 64, StepMiB: 4, Repetitions: 1}, runner)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.MinimumPassMiB != 32 || got.BoundaryResolved {
+		t.Fatalf("result=%+v", got)
 	}
 }
 

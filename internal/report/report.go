@@ -92,23 +92,25 @@ type WorkloadConfig struct {
 }
 
 type RunSummary struct {
-	SchemaVersion int             `json:"schema_version"`
-	RunID         string          `json:"run_id"`
-	Strategy      string          `json:"strategy"`
-	Success       bool            `json:"success"`
-	StartedAt     string          `json:"started_at,omitempty"`
-	DurationNS    int64           `json:"duration_ns,omitempty"`
-	CgroupVersion string          `json:"cgroup_version,omitempty"`
-	CacheSource   string          `json:"cache_source,omitempty"`
-	Filesystem    string          `json:"filesystem,omitempty"`
-	Rotations     int             `json:"rotations,omitempty"`
-	Workload      WorkloadConfig  `json:"workload"`
-	PeakMemory    uint64          `json:"peak_memory,omitempty"`
-	PeakRSS       uint64          `json:"peak_rss,omitempty"`
-	Cache         CacheMetrics    `json:"cache"`
-	Writer        WriterState     `json:"writer"`
-	Integrity     IntegrityReport `json:"integrity"`
-	Error         string          `json:"error,omitempty"`
+	SchemaVersion        int             `json:"schema_version"`
+	RunID                string          `json:"run_id"`
+	Strategy             string          `json:"strategy"`
+	Success              bool            `json:"success"`
+	StartedAt            string          `json:"started_at,omitempty"`
+	DurationNS           int64           `json:"duration_ns,omitempty"`
+	CgroupVersion        string          `json:"cgroup_version,omitempty"`
+	CacheSource          string          `json:"cache_source,omitempty"`
+	Filesystem           string          `json:"filesystem,omitempty"`
+	Rotations            int             `json:"rotations,omitempty"`
+	Workload             WorkloadConfig  `json:"workload"`
+	PeakMemory           uint64          `json:"peak_memory,omitempty"`
+	PeakRSS              uint64          `json:"peak_rss,omitempty"`
+	PeakAnon             uint64          `json:"peak_anon,omitempty"`
+	Cache                CacheMetrics    `json:"cache"`
+	Writer               WriterState     `json:"writer"`
+	WriterImplementation string          `json:"writer_implementation"`
+	Integrity            IntegrityReport `json:"integrity"`
+	Error                string          `json:"error,omitempty"`
 }
 
 type ComparisonReport struct {
@@ -136,6 +138,10 @@ type SweepReport struct {
 	Strategy           string         `json:"strategy"`
 	MinimumPassMiB     int            `json:"minimum_pass_mib"`
 	GreatestFailMiB    int            `json:"greatest_fail_mib"`
+	BoundaryResolved   bool           `json:"boundary_resolved"`
+	BaselineMinimumMiB int            `json:"baseline_minimum_mib,omitempty"`
+	DeltaMinimumMiB    int            `json:"delta_minimum_mib"`
+	DeltaResolved      bool           `json:"delta_resolved"`
 	OOMFailures        int            `json:"oom_failures"`
 	TimeoutFailures    int            `json:"timeout_failures"`
 	FunctionalFailures int            `json:"functional_failures"`
