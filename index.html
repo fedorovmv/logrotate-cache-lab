@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logrotate cache lab</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      color: #172033;
+      background: #f4f7fb;
+      font: 16px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main {
+      width: min(760px, calc(100% - 32px));
+      padding: 44px;
+      border-radius: 22px;
+      background: white;
+      box-shadow: 0 20px 60px rgba(29, 58, 117, .15);
+    }
+    h1 { margin: 0 0 12px; font-size: clamp(30px, 6vw, 48px); line-height: 1.08; }
+    p { margin: 0; color: #667085; font-size: 18px; }
+    nav { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    a {
+      padding: 11px 18px;
+      border: 1px solid #246bfd;
+      border-radius: 10px;
+      color: #165dcc;
+      font-weight: 750;
+      text-decoration: none;
+    }
+    a.primary { color: white; background: #246bfd; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Ротация логов Envoy</h1>
+  <p>Стенд для сравнения copytruncate и rename + reopen: файловый кеш, лимит памяти и целостность логов.</p>
+  <nav>
+    <a class="primary" href="reports/logrotate-cache-report.html">Открыть отчёт</a>
+    <a href="https://github.com/fedorovmv/logrotate-cache-lab">Репозиторий на GitHub ↗</a>
+  </nav>
+</main>
+</body>
+</html>
