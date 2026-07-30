@@ -104,17 +104,21 @@
   </header>
 
   <div class="lead">
-    <b>Вывод:</b> на файле 50 MiB вариант <b>rename + reopen</b> прошёл при лимите <b>52 MiB</b>, а copytruncate потребовал <b>88 MiB</b>. Полнофайловое копирование добавило 36 MiB к минимальному лимиту и примерно удвоило file cache. Rename/reopen сохранил все sequence ID; copytruncate имеет неустранимое окно потери записей между достижением EOF при копировании и truncate.
+    <b>Вывод:</b> при ротации файла 50 MiB минимальный лимит памяти <b>всего тестового контейнера</b> составил <b>52 MiB для rename + reopen</b> и <b>88 MiB для copytruncate</b>. Это значение Docker <code>--memory</code> / cgroup <code>memory.max</code>, а не размер лог-файла или file cache. Полнофайловое копирование потребовало дополнительно 36 MiB container memory headroom и примерно удвоило file cache.
+  </div>
+
+  <div class="callout" style="margin:20px 0">
+    <b>Что именно означает «52 MiB» и «88 MiB»?</b> Для каждого кандидата контейнер запускался с жёстким memory limit. Значение считается прошедшим, только если <b>все три запуска</b> записали файл 50 MiB, завершили ротацию и не получили OOM. В лимит входит всё: 32 MiB эмулируемого resident working set, C++ writer, Go run/monitor/rotator, anonymous memory, file cache, dirty и writeback pages.
   </div>
 
   <section class="grid">
     <div class="card">
-      <h3>Минимум: copytruncate</h3>
+      <h3>Container memory limit: copytruncate</h3>
       <div class="metric bad">88 <small>MiB</small></div>
       <p class="muted">84 MiB не прошло 3/3 повторов</p>
     </div>
     <div class="card">
-      <h3>Минимум: rename + reopen</h3>
+      <h3>Container memory limit: rename + reopen</h3>
       <div class="metric good">52 <small>MiB</small></div>
       <p class="muted">Совпало с baseline</p>
     </div>
@@ -125,9 +129,9 @@
     </div>
   </section>
 
-  <h2>Граница памяти</h2>
+  <h2>Минимальный memory limit всего контейнера</h2>
   <div class="card figure">
-    <svg viewBox="0 0 900 270" role="img" aria-label="Минимальные прошедшие memory limits">
+    <svg viewBox="0 0 900 270" role="img" aria-label="Минимальные прошедшие memory limits всего контейнера">
       <defs>
         <linearGradient id="copy" x1="0" x2="1"><stop stop-color="#f6b85f"/><stop offset="1" stop-color="#f28c28"/></linearGradient>
         <linearGradient id="rename" x1="0" x2="1"><stop stop-color="#48c99a"/><stop offset="1" stop-color="#138a5b"/></linearGradient>
@@ -147,7 +151,7 @@
   <p class="muted">Метод: файл 50 MiB, бинарный поиск 32–192 MiB, шаг 4 MiB; кандидат принимается только при трёх успешных повторах. Swap ограничен тем же значением, что и memory limit.</p>
 
   <table>
-    <thead><tr><th>Стратегия</th><th>Наибольший fail</th><th>Минимальный pass</th><th>К baseline</th><th>Попыток</th><th>Целостность</th></tr></thead>
+    <thead><tr><th>Стратегия</th><th>Наибольший limit с fail</th><th>Минимальный limit с 3/3 pass</th><th>К baseline</th><th>Попыток</th><th>Целостность</th></tr></thead>
     <tbody>
       <tr><td>Baseline, без ротации</td><td>48 MiB</td><td><b>52 MiB</b></td><td>—</td><td>24</td><td><span class="badge good">clean</span></td></tr>
       <tr><td>copytruncate</td><td>84 MiB</td><td><b>88 MiB</b></td><td class="bad">+36 MiB</td><td>24</td><td><span class="badge bad">loss observed</span></td></tr>
@@ -155,8 +159,18 @@
     </tbody>
   </table>
 
+  <h3 style="margin-top:22px">Из чего складывался container limit на минимальной успешной границе</h3>
+  <table>
+    <thead><tr><th>Стратегия</th><th>Заданный container limit</th><th>Peak memory.current</th><th>Peak anon</th><th>Peak file cache</th><th>Результат</th></tr></thead>
+    <tbody>
+      <tr><td>copytruncate</td><td>88 MiB</td><td>≈88 MiB</td><td>≈47.4 MiB</td><td>37.8–37.9 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
+      <tr><td>rename + reopen</td><td>52 MiB</td><td>≈52 MiB</td><td>44.5–47.1 MiB</td><td>4.4–6.9 MiB</td><td><span class="badge good">3/3 pass</span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Лог-файл остаётся на disk-backed volume. При лимите 52 MiB ядро не обязано держать все 50 MiB файла в RAM: оно вытесняло большую часть file cache, оставляя место anonymous working set. Copytruncate одновременно создавал cache для исходного и backup inode, поэтому при 84 MiB контейнер ещё получал OOM, а устойчиво прошёл только при 88 MiB.</p>
+
   <div class="callout" style="margin-top:16px">
-    <b>Масштабирование подтвердилось.</b> На коротком файле 4 MiB разница минимальных лимитов была 8 MiB в одиночном smoke и 8 MiB в прямом трёхкратном сравнении. На 50 MiB copytruncate потребовал уже на <b>36 MiB</b> больше rename/reopen. Rename остался на уровне baseline, поскольку не создаёт вторую копию содержимого файла.
+    <b>Масштабирование подтвердилось.</b> На коротком файле 4 MiB разница минимальных container limits была 8 MiB. На 50 MiB минимальный container limit для copytruncate оказался уже на <b>36 MiB</b> выше rename/reopen. Rename остался на уровне baseline, поскольку не создаёт вторую копию содержимого файла.
   </div>
 
   <h2>Целостность логов</h2>
