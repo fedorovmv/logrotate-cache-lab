@@ -56,6 +56,7 @@ make build
 make docker-smoke
 ./scripts/compare.sh --quick
 ./scripts/compare.sh
+./scripts/compare-50m-5x.sh
 ./scripts/memory-sweep.sh --quick
 ./scripts/memory-sweep.sh
 ./scripts/memory-sweep-50m.sh
@@ -71,6 +72,11 @@ a pipeline check and is not intended to establish a stable production limit.
 8 MiB/s writer rate, 32 MiB resident allocation, a 4 MiB search grid, and
 three required repetitions. Its `--quick` mode uses one repetition and a
 16 MiB grid only as a pipeline check.
+
+`compare-50m-5x.sh` tests cache accumulation across five consecutive 50 MiB
+rotations with `max-backups=5`, a 20 ms sampling interval, and the same 768 MiB
+container limit for both strategies. It writes a time-series SVG next to the
+CSV and JSON results.
 
 Generated reports are written below `results/`. The scripts remove only the
 containers, named volumes, temporary manifests, and kind cluster that they

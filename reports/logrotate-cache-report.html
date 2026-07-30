@@ -76,6 +76,7 @@
     .badge.info { color: #174ea6; background: #e5efff; }
     .figure { padding: 18px; overflow-x: auto; }
     svg { display: block; width: 100%; min-width: 680px; height: auto; }
+    .chart-image { display: block; width: 100%; min-width: 900px; height: auto; }
     .callout { padding: 16px 18px; border-radius: 12px; background: #fff7e8; border: 1px solid #f3d69d; }
     ul, ol { padding-left: 22px; }
     li { margin: 7px 0; }
@@ -189,6 +190,37 @@
   <p>Потеря у copytruncate возникает, когда writer сбрасывает buffered block после того, как копирование дошло до EOF, но до truncate. <code>fsync</code> backup-файла делает уже скопированные данные устойчивыми, однако не закрывает это окно. Точное число зависит от scheduling и момента flush, но на 50 MiB проблема воспроизвелась во всех трёх минимальных успешных попытках.</p>
 
   <h2>File cache и скорость заполнения</h2>
+  <h3>Пять последовательных ротаций по 50 MiB, max-backups=5</h3>
+  <p>Этот профиль специально проверяет аккумуляцию: обе стратегии работают под одинаковым высоким container limit 768 MiB, чтобы reclaim не скрывал естественную динамику cache. Sampling выполняется каждые 20 ms; R1…R5 на графике — завершения ротаций.</p>
+
+  <div class="card figure">
+    <img class="chart-image" src="assets/cache-50m-5x.svg" alt="Временной график file cache для пяти ротаций copytruncate и rename reopen">
+  </div>
+
+  <table style="margin-top:16px">
+    <thead><tr><th>Ротация</th><th>Copy: transient peak</th><th>Copy: после truncate</th><th>Rename: cache</th><th>Retained backups</th></tr></thead>
+    <tbody>
+      <tr><td>R1</td><td>101.6 MiB</td><td>51.5–52.9 MiB</td><td>≈50.0 MiB</td><td>1 × 50 MiB</td></tr>
+      <tr><td>R2</td><td>151.4 MiB</td><td>101.8–103.9 MiB</td><td>≈100.3 MiB</td><td>2 × 50 MiB</td></tr>
+      <tr><td>R3</td><td>202.0 MiB</td><td>152.3–154.2 MiB</td><td>≈150.2 MiB</td><td>3 × 50 MiB</td></tr>
+      <tr><td>R4</td><td>252.8 MiB</td><td>202.8–204.7 MiB</td><td>≈200.4 MiB</td><td>4 × 50 MiB</td></tr>
+      <tr><td>R5</td><td><b>302.9 MiB</b></td><td>252.7 MiB в конце</td><td><b>251.0 MiB</b></td><td>5 × 50 MiB</td></tr>
+    </tbody>
+  </table>
+
+  <table style="margin-top:16px">
+    <thead><tr><th>Стратегия</th><th>Peak cache</th><th>End cache</th><th>Peak memory.current</th><th>Cache fill</th><th>Missing</th></tr></thead>
+    <tbody>
+      <tr><td>copytruncate</td><td class="bad"><b>302.88 MiB</b></td><td>252.65 MiB</td><td>366.02 MiB</td><td class="bad"><b>16.01 MiB/s</b></td><td class="bad"><b>1778</b></td></tr>
+      <tr><td>rename + reopen</td><td class="good"><b>250.99 MiB</b></td><td>250.99 MiB</td><td>312.70 MiB</td><td>8.01 MiB/s</td><td class="good"><b>0</b></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout" style="margin:16px 0 24px">
+    <b>Ответ про аккумуляцию.</b> Cache retained backup-файлов накапливается у обеих стратегий примерно по 50 MiB за ротацию, пока ядро не испытывает memory pressure. Copytruncate не оставляет постоянную вторую копию каждой ротации в cache: после truncate лишние страницы active inode уходят. Но при каждом следующем копировании появляется transient ещё на один полный файл, поэтому пила растёт как <code>retained backups + 50 MiB</code>. Rename/reopen растёт почти линейно без этих дополнительных зубцов.
+  </div>
+
+  <h3>Одна ротация при общем container limit 192 MiB</h3>
   <table>
     <thead><tr><th>Стратегия</th><th>Cache fill</th><th>Peak cache</th><th>Peak memory</th><th>Peak anon</th><th>Missing</th></tr></thead>
     <tbody>
@@ -213,7 +245,7 @@
       <rect x="590" y="166" width="150" height="119" rx="10" fill="#138a5b"/><text x="630" y="155" font-family="Inter,system-ui,sans-serif" font-weight="700">49.77 MiB</text><text x="602" y="315" font-family="Inter,system-ui,sans-serif">rename + reopen</text>
     </svg>
   </div>
-  <p class="muted">При 50 MiB copytruncate одновременно удерживает страницы исходного и backup inode: peak file cache и скорость его заполнения приблизительно удваиваются. Rename/reopen остаётся на уровне обычной записи без копирования.</p>
+  <p class="muted">При одной ротации copytruncate одновременно удерживает страницы исходного и backup inode: peak file cache и скорость его заполнения приблизительно удваиваются. Rename/reopen остаётся на уровне обычной записи без копирования.</p>
 
   <h2>Влияние реализации writer</h2>
   <p>Первый вариант использовал Go writer, и его GC/runtime заметно влиял на минимальный лимит. Docker/kind writer был переписан на C++17: фиксированный record buffer, предварительно зарезервированный flush buffer, отсутствие сборщика мусора.</p>
@@ -252,6 +284,7 @@
         <li>Cgroup v2 memory/file/anon counters</li>
         <li>Exit 137 и child-only OOM распознаются отдельно</li>
         <li>Sequence-ID integrity по active + backups</li>
+        <li>Accumulation profile: 5 × 50 MiB, max-backups=5, sampling 20 ms</li>
       </ul>
     </div>
   </section>
@@ -261,6 +294,7 @@
     <li><b>Это сравнительный стенд, не sizing настоящего Envoy.</b> C++ writer не воспроизводит allocator, worker threads и полную access-log реализацию Envoy.</li>
     <li>Числа получены внутри Linux VM Docker Desktop. Production kernel, filesystem, cgroup и storage class могут изменить reclaim/writeback.</li>
     <li>Основной результат получен для одной ротации файла 50 MiB. Несколько одновременно удерживаемых backup-файлов и другой writeback rate могут изменить абсолютную границу.</li>
+    <li>График пяти ротаций снят при высоком лимите 768 MiB, поэтому показывает накопление без активного cgroup reclaim. Под жёстким production limit старые clean cache pages могут вытесняться раньше.</li>
     <li>Baseline содержит обычную запись того же объёма и служит reference, но не является строгой нижней границей.</li>
     <li>Потеря copytruncate зависит от scheduling и flush timing; отсутствие потери в одном запуске не доказывает безопасность алгоритма.</li>
   </ol>
@@ -275,11 +309,16 @@
 ./scripts/memory-sweep.sh --quick
 ./scripts/kind-sweep.sh --quick
 
+# Накопление cache: 5 ротаций × 50 MiB, max-backups=5
+./scripts/compare-50m-5x.sh
+
 # Профиль 50 MiB: 3 повтора, шаг 4 MiB
 ./scripts/memory-sweep-50m.sh</pre>
 
   <h2>Исходные данные</h2>
   <ul>
+    <li><a href="../results/compare-50m-5x-20260730T200957/comparison.json">Пять ротаций по 50 MiB, JSON</a></li>
+    <li><a href="assets/cache-50m-5x.svg">Временной график пяти ротаций, SVG</a></li>
     <li><a href="../results/memory-sweep-50m.json">Основной memory sweep 50 MiB, JSON</a></li>
     <li><a href="../results/memory-sweep-repeated-4m.json">Трёхкратный memory sweep, JSON</a></li>
     <li><a href="../results/compare-20260730T190350/comparison.json">Финальное сравнение стратегий, JSON</a></li>
