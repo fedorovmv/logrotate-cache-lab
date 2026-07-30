@@ -15,7 +15,10 @@ type Config struct {
 }
 
 func Search(ctx context.Context, cfg Config, run AttemptRunner) (report.SweepReport, error) {
-	result := report.SweepReport{SchemaVersion: report.SchemaVersion, Strategy: cfg.Strategy}
+	result := report.SweepReport{
+		SchemaVersion: report.SchemaVersion, Strategy: cfg.Strategy,
+		LowerMiB: cfg.LowerMiB, UpperMiB: cfg.UpperMiB, StepMiB: cfg.StepMiB, Repetitions: cfg.Repetitions,
+	}
 	if cfg.LowerMiB <= 0 || cfg.UpperMiB < cfg.LowerMiB || cfg.StepMiB <= 0 || cfg.Repetitions <= 0 {
 		return result, fmt.Errorf("invalid sweep configuration")
 	}

@@ -38,4 +38,7 @@ func TestRunRenameSubprocessesPreservesIntegrity(t *testing.T) {
 	if summary.Integrity.Missing != 0 || summary.Integrity.Duplicates != 0 || summary.Integrity.Malformed != 0 {
 		t.Fatalf("integrity=%+v", summary.Integrity)
 	}
+	if summary.Workload.MaxFileBytes != 64*1024 || summary.Workload.Rotations != 2 || summary.Workload.RecordBytes != 256 {
+		t.Fatalf("workload=%+v", summary.Workload)
+	}
 }

@@ -27,12 +27,24 @@ type DockerConfig struct {
 }
 
 func DockerSearch(ctx context.Context, cfg DockerConfig, strategy rotator.Strategy) (report.SweepReport, error) {
-	return Search(ctx, Config{
+	result, err := Search(ctx, Config{
 		LowerMiB: cfg.LowerMiB, UpperMiB: cfg.UpperMiB, StepMiB: cfg.StepMiB,
 		Repetitions: cfg.Repetitions, Strategy: string(strategy),
 	}, func(ctx context.Context, attempt report.SweepAttempt) report.SweepAttempt {
 		return dockerAttempt(ctx, cfg, strategy, attempt)
 	})
+	result.AttemptTimeoutNS = cfg.AttemptTimeout.Nanoseconds()
+	result.Workload = dockerWorkload(cfg)
+	return result, err
+}
+
+func dockerWorkload(cfg DockerConfig) report.WorkloadConfig {
+	return report.WorkloadConfig{
+		MaxFileBytes: cfg.MaxFileBytes, Rotations: cfg.Rotations, MaxBackups: 0,
+		RecordBytes: cfg.RecordBytes, BytesPerSecond: cfg.BytesPerSecond, BufferBytes: cfg.BufferBytes,
+		FlushIntervalNS: cfg.FlushInterval.Nanoseconds(), MonitorIntervalNS: cfg.MonitorInterval.Nanoseconds(),
+		ResidentBytes: cfg.ResidentBytes,
+	}
 }
 
 func dockerAttempt(ctx context.Context, cfg DockerConfig, strategy rotator.Strategy, attempt report.SweepAttempt) report.SweepAttempt {

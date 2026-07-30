@@ -157,6 +157,12 @@ func Run(ctx context.Context, cfg Config) (report.RunSummary, error) {
 		SchemaVersion: report.SchemaVersion, RunID: cfg.RunID, Strategy: string(cfg.Strategy), StartedAt: start.UTC().Format(time.RFC3339Nano),
 		DurationNS: time.Since(start).Nanoseconds(), Rotations: cfg.Rotations, Writer: writerState,
 		Integrity: integrityReport, Cache: metrics.Analyze(samples, events),
+		Workload: report.WorkloadConfig{
+			MaxFileBytes: cfg.MaxFileBytes, Rotations: cfg.Rotations, MaxBackups: cfg.MaxBackups,
+			RecordBytes: cfg.RecordBytes, BytesPerSecond: cfg.BytesPerSecond, BufferBytes: cfg.BufferBytes,
+			FlushIntervalNS: cfg.FlushInterval.Nanoseconds(), MonitorIntervalNS: cfg.MonitorInterval.Nanoseconds(),
+			ResidentBytes: cfg.ResidentBytes,
+		},
 	}
 	for _, sample := range samples {
 		if sample.MemoryCurrent > summary.PeakMemory {

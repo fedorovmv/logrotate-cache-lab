@@ -79,6 +79,18 @@ type WriterState struct {
 	LastError      string `json:"last_error,omitempty"`
 }
 
+type WorkloadConfig struct {
+	MaxFileBytes      int64 `json:"max_file_bytes"`
+	Rotations         int   `json:"rotations"`
+	MaxBackups        int   `json:"max_backups"`
+	RecordBytes       int   `json:"record_bytes"`
+	BytesPerSecond    int64 `json:"bytes_per_second"`
+	BufferBytes       int   `json:"buffer_bytes"`
+	FlushIntervalNS   int64 `json:"flush_interval_ns"`
+	MonitorIntervalNS int64 `json:"monitor_interval_ns"`
+	ResidentBytes     int64 `json:"resident_bytes"`
+}
+
 type RunSummary struct {
 	SchemaVersion int             `json:"schema_version"`
 	RunID         string          `json:"run_id"`
@@ -90,6 +102,7 @@ type RunSummary struct {
 	CacheSource   string          `json:"cache_source,omitempty"`
 	Filesystem    string          `json:"filesystem,omitempty"`
 	Rotations     int             `json:"rotations,omitempty"`
+	Workload      WorkloadConfig  `json:"workload"`
 	PeakMemory    uint64          `json:"peak_memory,omitempty"`
 	PeakRSS       uint64          `json:"peak_rss,omitempty"`
 	Cache         CacheMetrics    `json:"cache"`
@@ -127,6 +140,12 @@ type SweepReport struct {
 	TimeoutFailures    int            `json:"timeout_failures"`
 	FunctionalFailures int            `json:"functional_failures"`
 	IntegrityFailures  int            `json:"integrity_failures"`
+	LowerMiB           int            `json:"lower_mib"`
+	UpperMiB           int            `json:"upper_mib"`
+	StepMiB            int            `json:"step_mib"`
+	Repetitions        int            `json:"repetitions"`
+	AttemptTimeoutNS   int64          `json:"attempt_timeout_ns,omitempty"`
+	Workload           WorkloadConfig `json:"workload"`
 	Attempts           []SweepAttempt `json:"attempts"`
 }
 
