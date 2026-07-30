@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Отчёт: file cache при ротации логов Envoy</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #667085;
+      --paper: #f4f7fb;
+      --card: #ffffff;
+      --line: #d9e1ec;
+      --blue: #246bfd;
+      --cyan: #17a2b8;
+      --orange: #f28c28;
+      --green: #138a5b;
+      --red: #c53b46;
+      --purple: #7856d8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.58 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 36px 24px 72px; }
+    header {
+      color: white;
+      padding: 42px;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(255,255,255,.18), transparent 28%),
+        linear-gradient(130deg, #172b58, #246bfd 62%, #17a2b8);
+      box-shadow: 0 20px 60px rgba(29, 58, 117, .22);
+    }
+    h1 { margin: 0 0 10px; font-size: clamp(29px, 5vw, 48px); line-height: 1.08; letter-spacing: -.03em; }
+    h2 { margin: 42px 0 14px; font-size: 25px; letter-spacing: -.02em; }
+    h3 { margin: 0 0 8px; font-size: 18px; }
+    p { margin: 8px 0 14px; }
+    .subtitle { max-width: 760px; margin: 0; font-size: 18px; opacity: .92; }
+    .meta { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .meta span, .badge { padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .meta span { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2); }
+    .lead {
+      margin: 24px 0;
+      padding: 22px 24px;
+      border-left: 5px solid var(--green);
+      border-radius: 12px;
+      background: #edf9f4;
+      font-size: 17px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid.two { grid-template-columns: repeat(2, 1fr); }
+    .card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+      box-shadow: 0 8px 26px rgba(31, 48, 78, .06);
+    }
+    .metric { font-size: 34px; line-height: 1.1; font-weight: 800; letter-spacing: -.04em; }
+    .metric small { font-size: 15px; color: var(--muted); letter-spacing: 0; }
+    .muted { color: var(--muted); }
+    .good { color: var(--green); }
+    .bad { color: var(--red); }
+    .warn { color: var(--orange); }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; background: white; border-radius: 14px; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: #475467; background: #eef3f9; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    tr:last-child td { border-bottom: 0; }
+    .badge.good { color: #087047; background: #dcf7ea; }
+    .badge.bad { color: #a52835; background: #ffe5e8; }
+    .badge.info { color: #174ea6; background: #e5efff; }
+    .figure { padding: 18px; overflow-x: auto; }
+    svg { display: block; width: 100%; min-width: 680px; height: auto; }
+    .callout { padding: 16px 18px; border-radius: 12px; background: #fff7e8; border: 1px solid #f3d69d; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 7px 0; }
+    code { padding: 2px 6px; border-radius: 5px; background: #edf1f7; color: #293b63; }
+    pre { padding: 16px; overflow: auto; border-radius: 12px; color: #e9efff; background: #172033; }
+    a { color: #165dcc; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer { margin-top: 46px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); }
+    @media (max-width: 760px) { .grid, .grid.two { grid-template-columns: 1fr; } header { padding: 28px; } main { padding: 18px 14px 48px; } }
+    @media print { body { background: white; } main { max-width: none; padding: 0; } header, .card { box-shadow: none; } a { color: inherit; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>File cache при ротации логов Envoy</h1>
+    <p class="subtitle">Сравнение <b>copytruncate</b> из текущего pilot-agent и <b>rename + reopen</b> на disk-backed storage под cgroup memory limit.</p>
+    <div class="meta">
+      <span>30 июля 2026</span>
+      <span>Docker Desktop / Linux VM</span>
+      <span>C++ writer</span>
+      <span>tmpfs исключён</span>
+      <span>3 повтора на границе</span>
+    </div>
+  </header>
+
+  <div class="lead">
+    <b>Вывод:</b> для протестированного workload вариант <b>rename + reopen</b> является предпочтительным. Он исключает полнофайловое копирование, прошёл на лимите <b>24 MiB</b> против <b>32 MiB</b> у copytruncate и сохранил все sequence ID. Copytruncate требует дополнительный запас памяти и имеет неустранимое окно потери записей между достижением EOF при копировании и truncate.
+  </div>
+
+  <section class="grid">
+    <div class="card">
+      <h3>Минимум: copytruncate</h3>
+      <div class="metric bad">32 <small>MiB</small></div>
+      <p class="muted">28 MiB не прошло 3/3 повторов</p>
+    </div>
+    <div class="card">
+      <h3>Минимум: rename + reopen</h3>
+      <div class="metric good">24 <small>MiB</small></div>
+      <p class="muted">20 MiB не прошло 3/3 повторов</p>
+    </div>
+    <div class="card">
+      <h3>Разница стратегий</h3>
+      <div class="metric good">−8 <small>MiB</small></div>
+      <p class="muted">25% ниже относительно copytruncate</p>
+    </div>
+  </section>
+
+  <h2>Граница памяти</h2>
+  <div class="card figure">
+    <svg viewBox="0 0 900 270" role="img" aria-label="Минимальные прошедшие memory limits">
+      <defs>
+        <linearGradient id="copy" x1="0" x2="1"><stop stop-color="#f6b85f"/><stop offset="1" stop-color="#f28c28"/></linearGradient>
+        <linearGradient id="rename" x1="0" x2="1"><stop stop-color="#48c99a"/><stop offset="1" stop-color="#138a5b"/></linearGradient>
+        <linearGradient id="base" x1="0" x2="1"><stop stop-color="#9ab8ff"/><stop offset="1" stop-color="#246bfd"/></linearGradient>
+      </defs>
+      <g font-family="Inter,system-ui,sans-serif" font-size="13" fill="#667085">
+        <text x="190" y="245">0</text><text x="330" y="245">8</text><text x="470" y="245">16</text><text x="610" y="245">24</text><text x="750" y="245">32 MiB</text>
+        <g stroke="#d9e1ec"><line x1="200" y1="25" x2="200" y2="225"/><line x1="340" y1="25" x2="340" y2="225"/><line x1="480" y1="25" x2="480" y2="225"/><line x1="620" y1="25" x2="620" y2="225"/><line x1="760" y1="25" x2="760" y2="225"/></g>
+      </g>
+      <g font-family="Inter,system-ui,sans-serif" font-weight="700" fill="#172033">
+        <text x="20" y="66">Baseline</text><rect x="200" y="40" width="490" height="38" rx="9" fill="url(#base)"/><text x="705" y="65">28 MiB</text>
+        <text x="20" y="137">copytruncate</text><rect x="200" y="111" width="560" height="38" rx="9" fill="url(#copy)"/><text x="775" y="136">32 MiB</text>
+        <text x="20" y="208">rename + reopen</text><rect x="200" y="182" width="420" height="38" rx="9" fill="url(#rename)"/><text x="635" y="207">24 MiB</text>
+      </g>
+    </svg>
+  </div>
+  <p class="muted">Метод: бинарный поиск 16–64 MiB, шаг 4 MiB, кандидат принимается только при трёх успешных повторах. Swap ограничен тем же значением, что и memory limit.</p>
+
+  <table>
+    <thead><tr><th>Стратегия</th><th>Наибольший fail</th><th>Минимальный pass</th><th>К baseline</th><th>Попыток</th><th>Целостность</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline, без ротации</td><td>24 MiB (2/3 pass)</td><td><b>28 MiB</b></td><td>—</td><td>18</td><td><span class="badge good">clean</span></td></tr>
+      <tr><td>copytruncate</td><td>28 MiB (0/3 pass)</td><td><b>32 MiB</b></td><td class="bad">+4 MiB</td><td>15</td><td><span class="badge bad">loss observed</span></td></tr>
+      <tr><td>rename + reopen</td><td>20 MiB (0/3 pass)</td><td><b>24 MiB</b></td><td class="good">−4 MiB</td><td>18</td><td><span class="badge good">clean</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout" style="margin-top:16px">
+    <b>Почему rename ниже baseline?</b> Baseline — контрольный workload с тем же объёмом обычной записи в один растущий inode, а не теоретическая нижняя граница. Rename меняет жизненный цикл inode и условия reclaim; кроме того, граница дискретна и чувствительна к планированию/writeback. Корректная прямая величина для выбора алгоритма здесь — <b>32 против 24 MiB</b>. Отрицательная delta не означает «отрицательное потребление памяти».
+  </div>
+
+  <h2>Целостность логов</h2>
+  <section class="grid two">
+    <div class="card">
+      <h3>Финальный Docker comparison</h3>
+      <div class="metric bad">380 <small>потерянных записей</small></div>
+      <p>Copytruncate, две ротации по 4 MiB. Дубликатов и malformed-записей не обнаружено.</p>
+    </div>
+    <div class="card">
+      <h3>Rename + reopen</h3>
+      <div class="metric good">0 <small>потерь</small></div>
+      <p>Нет missing, duplicate или malformed sequence ID. Reopen завершился успешно.</p>
+    </div>
+  </section>
+  <p>Потеря у copytruncate не обязана происходить в каждом коротком запуске. Она возникает, когда writer сбрасывает buffered block после того, как копирование дошло до EOF, но до truncate. <code>fsync</code> backup-файла делает уже скопированные данные устойчивыми, однако не закрывает это окно.</p>
+
+  <h2>File cache и скорость заполнения</h2>
+  <table>
+    <thead><tr><th>Стратегия</th><th>Cache fill</th><th>Peak cache</th><th>Peak memory</th><th>Peak anon</th><th>Missing</th></tr></thead>
+    <tbody>
+      <tr><td>copytruncate</td><td>7.89 MiB/s</td><td>8.09 MiB</td><td>29.72 MiB</td><td>19.29 MiB</td><td class="bad"><b>380</b></td></tr>
+      <tr><td>rename + reopen</td><td>7.91 MiB/s</td><td>8.22 MiB</td><td>32.85 MiB</td><td>21.34 MiB</td><td class="good"><b>0</b></td></tr>
+    </tbody>
+  </table>
+
+  <div class="card figure" style="margin-top:16px">
+    <svg viewBox="0 0 900 340" role="img" aria-label="File cache во времени для короткого сравнения">
+      <g stroke="#d9e1ec" stroke-width="1">
+        <line x1="80" y1="285" x2="840" y2="285"/><line x1="80" y1="225" x2="840" y2="225"/><line x1="80" y1="165" x2="840" y2="165"/><line x1="80" y1="105" x2="840" y2="105"/><line x1="80" y1="45" x2="840" y2="45"/>
+      </g>
+      <g font-family="Inter,system-ui,sans-serif" font-size="12" fill="#667085">
+        <text x="48" y="289">0</text><text x="48" y="229">2</text><text x="48" y="169">4</text><text x="48" y="109">6</text><text x="48" y="49">8 MiB</text>
+        <text x="78" y="315">0.13 s</text><text x="430" y="315">0.63 s</text><text x="790" y="315">1.03 s</text>
+      </g>
+      <polyline fill="none" stroke="#f28c28" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="80,255 164,231 249,231 333,183 418,159 502,140 587,114 671,90 756,81 840,42"/>
+      <polyline fill="none" stroke="#138a5b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="80,252 164,252 249,208 333,185 418,159 502,136 587,110 671,85 756,62 840,38"/>
+      <g font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700">
+        <rect x="610" y="8" width="18" height="5" fill="#f28c28"/><text x="636" y="16" fill="#172033">copytruncate</text>
+        <rect x="735" y="8" width="18" height="5" fill="#138a5b"/><text x="761" y="16" fill="#172033">rename</text>
+      </g>
+    </svg>
+  </div>
+  <p class="muted">На коротком 4 MiB workload headline cache-fill почти одинаков: его задаёт основной поток записи 8 MiB/s. Копирование — короткий transient, который монитор с интервалом 100 ms может не поймать целиком. Поэтому для memory headroom более показателен повторный OOM boundary test. На production-размере 32–100 MiB следует повторить тест с интервалом 20–50 ms.</p>
+
+  <h2>Влияние реализации writer</h2>
+  <p>Первый вариант использовал Go writer, и его GC/runtime заметно влиял на минимальный лимит. Docker/kind writer был переписан на C++17: фиксированный record buffer, предварительно зарезервированный flush buffer, отсутствие сборщика мусора.</p>
+  <table>
+    <thead><tr><th>Процесс</th><th>RSS, resident=0</th><th>Комментарий</th></tr></thead>
+    <tbody>
+      <tr><td>Go writer, до изменения</td><td>≈13.8 MiB</td><td>Go runtime + heap</td></tr>
+      <tr><td>C++ writer</td><td class="good"><b>≈2.0 MiB</b></td><td>Используется в Docker/kind</td></tr>
+      <tr><td>Go orchestrator <code>run</code></td><td>≈9.6 MiB</td><td>Служебный фон стенда</td></tr>
+      <tr><td>Go monitor</td><td>≈8.8 MiB</td><td>Служебный фон стенда</td></tr>
+      <tr><td>Go rotator</td><td>≈8.5 MiB</td><td>Эмулятор pilot-agent</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">RSS снимался через <code>docker top</code> в диагностическом запуске. Суммировать RSS процессов как cgroup memory нельзя: общие file-backed страницы могут учитываться в RSS нескольких процессов. Для cgroup-анализа отчёт использует <code>memory.current</code>, <code>memory.stat anon</code> и <code>memory.stat file</code>.</p>
+
+  <h2>Методика</h2>
+  <section class="grid two">
+    <div class="card">
+      <h3>Memory boundary</h3>
+      <ul>
+        <li>Файл: 4 MiB, одна ротация</li>
+        <li>Поток: 8 MiB/s, record 512 B</li>
+        <li>Buffer: 64 KiB, flush 100 ms</li>
+        <li>Resident allocation: 8 MiB</li>
+        <li>Диапазон: 16–64 MiB, шаг 4 MiB</li>
+        <li>Три повтора каждого кандидата</li>
+        <li><code>--memory-swap == --memory</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Изоляция и наблюдение</h3>
+      <ul>
+        <li>Свежий Docker local volume на попытку</li>
+        <li>Disk-backed storage, без tmpfs</li>
+        <li>C++ writer и Go rotator — разные процессы</li>
+        <li>Cgroup v2 memory/file/anon counters</li>
+        <li>Exit 137 и child-only OOM распознаются отдельно</li>
+        <li>Sequence-ID integrity по active + backups</li>
+      </ul>
+    </div>
+  </section>
+
+  <h2>Ограничения</h2>
+  <ol>
+    <li><b>Это сравнительный стенд, не sizing настоящего Envoy.</b> C++ writer не воспроизводит allocator, worker threads и полную access-log реализацию Envoy.</li>
+    <li>Числа получены внутри Linux VM Docker Desktop. Production kernel, filesystem, cgroup и storage class могут изменить reclaim/writeback.</li>
+    <li>Файл 4 MiB выбран для быстрого устойчивого теста. При 32–100 MiB стоимость copytruncate должна измеряться повторно.</li>
+    <li>Baseline содержит обычную запись того же объёма и служит reference, но не является строгой нижней границей.</li>
+    <li>Потеря copytruncate зависит от scheduling и flush timing; отсутствие потери в одном запуске не доказывает безопасность алгоритма.</li>
+  </ol>
+
+  <h2>Рекомендация</h2>
+  <div class="lead">
+    Реализовать в pilot-agent ротацию <b>rename → создать replacement → вызвать Envoy <code>/reopen_logs</code></b>. Старый inode остаётся доступен writer до обработки reopen, поэтому данные в переходном окне попадают в переименованный backup. Перед rollout выполнить тот же трёхкратный sweep с реальным Envoy, production-размером лог-файла и целевым memory limit.
+  </div>
+
+  <h2>Как воспроизвести</h2>
+  <pre>./scripts/compare.sh --quick
+./scripts/memory-sweep.sh --quick
+./scripts/kind-sweep.sh --quick
+
+# Полный sweep: 3 повтора, шаг 4 MiB, файлы 32 MiB
+./scripts/memory-sweep.sh</pre>
+
+  <h2>Исходные данные</h2>
+  <ul>
+    <li><a href="../results/memory-sweep-repeated-4m.json">Трёхкратный memory sweep, JSON</a></li>
+    <li><a href="../results/compare-20260730T190350/comparison.json">Финальное сравнение стратегий, JSON</a></li>
+    <li><a href="../README.md">README стенда и описание полей</a></li>
+  </ul>
+
+  <footer>
+    Сформировано по результатам ветки <code>feature/logrotate-cache-lab</code>. Отчёт самодостаточен и пригоден для печати в PDF из браузера.
+  </footer>
+</main>
+</body>
+</html>
